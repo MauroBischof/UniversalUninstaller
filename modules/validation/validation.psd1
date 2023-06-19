@@ -21,7 +21,7 @@ ModuleVersion = '0.0.1'
 GUID = 'f3d6c695-df27-48b0-a355-9a966f34ed7c'
 
 # Author of this module
-Author = 'Mauro'
+Author = 'Mauro Bischof'
 
 # Company or vendor of this module
 CompanyName = 'Unknown'

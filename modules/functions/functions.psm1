@@ -9,7 +9,7 @@
 Set-StrictMode -Version Latest
 
 
-Function Get-InstalledApps {
+Function Get-InstalledApp {
     param(
         [parameter(Mandatory = $false)][string]$LogText,
         [Parameter(Position = 0)]$AppName
@@ -18,54 +18,64 @@ Function Get-InstalledApps {
         if (!$AppName) {
             $AppName = "*"
         }
-       
+
         $AppVersion = $null
 
         $32BitUninstallObejct = Get-ItemProperty HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\* `
         | Select-Object  DisplayName, DisplayVersion, Publisher, @{Name = "ProductID"; Expression = { $_.PSChildName } }, UninstallString, QuietUninstallString, Type, @{Name = "Context"; Expression = { "x32" } } `
-        | Where-Object { if ($AppVersion) { $_.DisplayName -like $AppName -AND $_.DisplayVersion -like $AppVersion } else { $_.DisplayName -like $AppName } }        
-   
+        | Where-Object { if ($AppVersion) { $_.DisplayName -like $AppName -AND $_.DisplayVersion -like $AppVersion } else { $_.DisplayName -like $AppName } }
+
         $64BitUninstallObejct = Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* `
         | Select-Object DisplayName, DisplayVersion, Publisher, @{Name = "ProductID"; Expression = { $_.PSChildName } }, UninstallString, QuietUninstallString, Type, @{Name = "Context"; Expression = { "x64" } } `
-        | Where-Object { if ($AppVersion) { $_.DisplayName -like $AppName -AND $_.DisplayVersion -like $AppVersion } else { $_.DisplayName -like $AppName } } 
-           
+        | Where-Object { if ($AppVersion) { $_.DisplayName -like $AppName -AND $_.DisplayVersion -like $AppVersion } else { $_.DisplayName -like $AppName } }
+
         $UninstallObejctUser = Get-ItemProperty HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* `
         | Select-Object DisplayName, DisplayVersion, Publisher, @{Name = "ProductID"; Expression = { $_.PSChildName } }, UninstallString, QuietUninstallString, Type, @{Name = "Context"; Expression = { "User" } } `
-        | Where-Object { if ($AppVersion) { $_.DisplayName -like $AppName -AND $_.DisplayVersion -like $AppVersion } else { $_.DisplayName -like $AppName } } 
-        
-               
+        | Where-Object { if ($AppVersion) { $_.DisplayName -like $AppName -AND $_.DisplayVersion -like $AppVersion } else { $_.DisplayName -like $AppName } }
+
+
         if ($64BitUninstallObejct -or $32BitUninstallObejct -or $UninstallObejctUser) {
-            
+
 
             $UninstallObejcts = (@($32BitUninstallObejct) + @($64BitUninstallObejct) + @($UninstallObejctUser))
-            
+
             foreach ($object in $UninstallObejcts) {
                 if ($object.QuietUninstallString) {
-                    $object.Type = "Quiet" 
+                    $object.Type = "Quiet"
                 }
                 elseif ($object.UninstallString -like "msiexec*" -AND $object.ProductID -like "{*}") {
-                    $object.Type = "MSI" 
+                    $object.Type = "MSI"
                     $object.QuietUninstallString = "/qn /x " + '"' + $object.ProductID + '"' + " /norestart"
                 }
                 else {
-                    $object.Type = "N/A" 
+                    $object.Type = "N/A"
                 }
 
-                
-            }   
-            return $UninstallObejcts 
+
+            }
+            return $UninstallObejcts
         }
         else {
-           
+
             #Cleanup -exitCode 1
-        }     
+        }
     }
     catch {
         $logMessage = "FAIL - $LogText - Error at line " + $_.InvocationInfo.ScriptLineNumber + ": " + $_.Exception.Message
-        Write-host $logMessage 
         #Cleanup -exitCode 1
     }
 }
+
+
+function Invoke-KillProcess {
+    param (
+        $displayName
+    )
+    Invoke-Command -Session $PSSession -ScriptBlock `
+    {(Get-Process | Where-Object {$using:displayName -like "*"+ $_.ProcessName +"*"} | Stop-Process -Force -Passthru)} -ErrorAction SilentlyContinue
+
+}
+
 
 Function Invoke-SilentUninstallString {
     param(
@@ -73,23 +83,24 @@ Function Invoke-SilentUninstallString {
         $progressBar,
         $type
     )
-    try {    
+    try {
         if ($type -like "MSI") {
+
             $job = Invoke-Command -Session $PSSession -ScriptBlock `
-            { (Start-Process -FilePath msiexec.exe -NoNewWindow -ArgumentList "test" -Wait -Passthru) } -AsJob #$using:command
+            { (Start-Process -FilePath msiexec.exe -ArgumentList $using:command -Wait -Passthru -WindowStyle Hidden ) } -AsJob
         }
-        elseif ($type -like "Quiet") {           
+        elseif ($type -like "Quiet") {
             $regex = '"(.*?)"\s(.*)'
-            $match = $command -split $regex 
+            $match = $command -split $regex
 
             $executable = $match[1]
             $argument = $match[2]
-         
+
             $job = Invoke-Command -Session $PSSession -ScriptBlock `
-            { (Start-Process -FilePath $using:executable -NoNewWindow -ArgumentList $using:argument -Wait -Passthru) } -AsJob 
+            { (Start-Process -FilePath $using:executable -ArgumentList $using:argument -Wait -Passthru -WindowStyle Hidden ) } -AsJob
 
         }
-       
+
         else {
             return 1
         }
@@ -102,7 +113,6 @@ Function Invoke-SilentUninstallString {
     }
     catch {
         $logMessage = "FAIL - Error at line " + $_.InvocationInfo.ScriptLineNumber + ": " + $_.Exception.Message
-        Write-host $logMessage 
     }
 }
 
@@ -113,7 +123,7 @@ function Invoke-CustomCommand {
         $type,
         $radioButtonPWSH
     )
-    
+
     if ($type -like "c_command") {
         if ($radioButtonPWSH -eq $true) {
             #$command = "'" + $command + "'"
@@ -127,7 +137,7 @@ function Invoke-CustomCommand {
 
         $progressBarStatus = Set-ProgressBar -progressBar $progressBar -job $job
         if ($progressBarStatus -ne 124) {
-            $output = $job.ChildJobs[0].Output | Out-String 
+            $output = $job.ChildJobs[0].Output | Out-String
 
             $decodedString = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::Default.GetBytes($output))
 
@@ -138,7 +148,7 @@ function Invoke-CustomCommand {
     else {
         return 1
     }
-    
+
 }
 
 Function Set-ProgressBar {
@@ -148,40 +158,40 @@ Function Set-ProgressBar {
     )
     $stopwatch = [Diagnostics.Stopwatch]::StartNew()
 
-    while ($job.State -ne 'Completed') {                
+    while ($job.State -ne 'Completed') {
         $progressBar.Style = "Marquee"
         [System.Windows.Forms.Application]::DoEvents()
- 
+
         #auf 60 erhöhren nach dem tests, timeout
-        if ($stopwatch.Elapsed.TotalSeconds -gt 60) {   
+        if ($stopwatch.Elapsed.TotalSeconds -gt 60) {
             $stopwatch.Stop()
             $progressBar.Style = "Continuous"
-            Get-Job | Stop-Job | Remove-Job -Force -ErrorAction SilentlyContinue 
-            return 124 
+            Get-Job | Stop-Job | Remove-Job -Force -ErrorAction SilentlyContinue
+            return 124
         }
-    } 
-       
+    }
+
     $stopwatch.Stop()
     $progressBar.Style = "Continuous"
-    
+
 }
 
 
 Function Get-Table {
-    param( $table )
+    param( $table
+    )
 
     #funktioniert noch nicht 100%
     if ($PSSession -and $PSSession.Availability -eq "Available") {
-   
+
         $table.Rows.Clear()
+
         #($formItems.SearchBox.filterTextBox).Clear()
-        $InstalledApps = Invoke-Command -Session $PSSession -ScriptBlock ${function:Get-InstalledApps}
+        $InstalledApps = Invoke-Command -Session $PSSession -ScriptBlock ${function:Get-InstalledApp}
         Update-TableContent -tableContent  $InstalledApps -table $table
-    
+
     }
 }
-
-
 
 Function Set-DisplayBoxText {
     param (
@@ -190,10 +200,10 @@ Function Set-DisplayBoxText {
     )
     $displayBox.Clear()
     $displayBox.AppendText($text)
-    
+
 }
 
-function Set-LastEntries {
+function Set-LastEntrie {
     param (
         $text,
         $lastEntries,
@@ -213,21 +223,21 @@ function Set-LastEntries {
 
         Update-AutoCompleteSource -autoCompleteSource $autoCompleteSource -lastEntries $lastEntries
     }
-    
+
 }
 
 function Set-PWSHCommandAutoComplete {
     param (
-        $autoCompleteSource 
+        $autoCompleteSource,
+        $pwshCommands
     )
     #wird jedes mal neu aufgerufen?
     $filteredCommands = @();
-    $commands = Get-Command | Where-Object { $_.Module -like "Microsoft.Powershell*" } | Select-Object Name  
-    foreach ($item in $commands) {
+    foreach ($item in $pwshCommands) {
         $filteredCommands += $item.Name
     }
     $autoCompleteSource.AddRange($filteredCommands)
-    
+
 }
 
 function Update-AutoCompleteSource {
@@ -235,11 +245,11 @@ function Update-AutoCompleteSource {
         $autoCompleteSource,
         $lastEntries
     )
-  
+
 
     $autoCompleteSource.Clear()
     $autoCompleteSource.AddRange($lastEntries)
-    
+
 }
 
 Export-ModuleMember -Function *

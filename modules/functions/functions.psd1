@@ -9,7 +9,7 @@
 @{
 
 # Script module or binary module file associated with this manifest.
-# RootModule = ''
+RootModule = 'functions.psm1'
 
 # Version number of this module.
 ModuleVersion = '0.0.1'
@@ -21,7 +21,7 @@ ModuleVersion = '0.0.1'
 GUID = 'f13547c2-1a3b-4c73-b22b-60a1d0b59c6b'
 
 # Author of this module
-Author = 'Mauro'
+Author = 'Mauro Bischof'
 
 # Company or vendor of this module
 CompanyName = 'Unknown'
@@ -69,7 +69,7 @@ Copyright = '(c) Mauro. All rights reserved.'
 # NestedModules = @()
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-FunctionsToExport = @(*)
+FunctionsToExport = @('*')
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
 CmdletsToExport = @()

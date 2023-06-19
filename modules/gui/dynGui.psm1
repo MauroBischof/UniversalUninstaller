@@ -1,28 +1,43 @@
+<#
+   .< help keyword>
+   < help content>
+   . . .
+   #>
+
+#region LOGGING
+
 Set-StrictMode -Version Latest
 
 
 
 
-
 function New-MenuStrip {
-    param (     
+    param (
     )
-   
+
     $menuStrip = New-Object System.Windows.Forms.MenuStrip
 
     $fileMenu = New-Object System.Windows.Forms.ToolStripMenuItem
     $fileMenu.Text = "File"
 
+    $donateButtonItem = New-Object System.Windows.Forms.ToolStripMenuItem
+    $donateButtonItem.Text = "Donate"
+
+    $aboutButtonItem = New-Object System.Windows.Forms.ToolStripMenuItem
+    $aboutButtonItem.Text = "About"
+
     $exitButtonItem = New-Object System.Windows.Forms.ToolStripMenuItem
     $exitButtonItem.Text = "Exit"
 
+    $fileMenu.DropDownItems.Add($aboutButtonItem)
+    $fileMenu.DropDownItems.Add($donateButtonItem)
     $fileMenu.DropDownItems.Add($exitButtonItem)
 
     $menuStrip.Items.Add($fileMenu)
 
     return  @{
         menuStrip = $menuStrip
-    } 
+    }
 }
 
 function New-ConnectArea {
@@ -44,7 +59,7 @@ function New-ConnectArea {
     $hostNameLabel.AutoSize = $true
     $hostNameBox = New-Object System.Windows.Forms.TextBox
     $hostNameBox.Dock = 'Fill'
-    $hostNameBox.AutoCompleteMode = 'SuggestAppend'
+    $hostNameBox.AutoCompleteMode = 'SuggestAppend' #SuggestAppend
     $hostNameBox.AutoCompleteSource = 'CustomSource'
     $hostNameBox.Size = New-Object System.Drawing.Size(200)
     # Set the autocomplete custom source
@@ -62,9 +77,9 @@ function New-ConnectArea {
         hostNameBox   = $hostNameBox
         hostNameLabel = $hostNameLabel
         connectButton = $connectButton
-        
+
     }
- 
+
 
 }
 
@@ -98,7 +113,7 @@ function New-OutputArea {
     $popOutLabel.AutoSize = $true
     $popOutLabel.Cursor = [System.Windows.Forms.Cursors]::Hand
     $popOutLabel.Dock = 'Right'
- 
+
     $ouputTextBox.Controls.Add($popOutLabel)
     # Create a tooltip for the text box
     $toolTip = New-Object System.Windows.Forms.ToolTip
@@ -110,10 +125,10 @@ function New-OutputArea {
         ouputTextBoxLabel = $ouputTextBoxLabel
         ouputTextBox      = $ouputTextBox
         popOutLabel       = $popOutLabel
-        
+
     }
 
-    
+
 }
 
 function New-TextBoxPopOutForm {
@@ -121,32 +136,39 @@ function New-TextBoxPopOutForm {
         $text
     )
 
-    $Width = 500
-    $Height = 400
-    # Create a new form to show the enlarged text box
-    $popOutForm = New-Object System.Windows.Forms.Form
-    $popOutForm.AutoSize = $true
-    $popOutForm.Height = ($Height - 100)
-    $popOutForm.MaximumSize = New-Object System.Drawing.Size($Width, $Height)
+    $scriptBlock = {
+        Add-Type -AssemblyName System.Windows.Forms
 
+        # Create a new form to show the enlarged text box
+        $popOutForm = New-Object System.Windows.Forms.Form
+        $popOutForm.AutoSize = $true
+        #$popOutForm.Height = ($Height - 100)
+        $popOutForm.Size = New-Object System.Drawing.Size(400, 300)
+        #$popOutForm.MaximumSize = New-Object System.Drawing.Size(800, 600)
+        $popOutForm.MinimumSize = New-Object System.Drawing.Size(300, 150)
 
-    $enlargedTextBox = New-Object System.Windows.Forms.RichTextBox
-    $enlargedTextBox.Text = $text
-    $enlargedTextBox.Multiline = $true
-    $enlargedTextBox.ReadOnly = $true
-    $enlargedTextBox.Width = ($Width - 20)
-    $enlargedTextBox.Height = ($enlargedTextBox.GetLineFromCharIndex($enlargedTextBox.Text.Length) + 1) * $enlargedTextBox.Font.Height + $enlargedTextBox.Margin.Vertical
-    $enlargedTextBox.MaximumSize = New-Object System.Drawing.Size($Width, ($Height - 40))
+        $enlargedTextBox = New-Object System.Windows.Forms.RichTextBox
+        $enlargedTextBox.Text = $using:text
+        $enlargedTextBox.Dock = "Fill"
+        $enlargedTextBox.Multiline = $true
+        $enlargedTextBox.ReadOnly = $true
+        #$enlargedTextBox.Width = ($Width - 20)
+        #$enlargedTextBox.Height = ($enlargedTextBox.GetLineFromCharIndex($enlargedTextBox.Text.Length) + 1) * $enlargedTextBox.Font.Height + $enlargedTextBox.Margin.Vertical
+        #$enlargedTextBox.MaximumSize = New-Object System.Drawing.Size($Width, ($Height - 40))
 
-    $popOutForm.Controls.Add($enlargedTextBox)
+        $popOutForm.Controls.Add($enlargedTextBox)
 
-    # Legen Sie die maximale Größe fest, bis zu der sich die Form anpassen kann
+        $popOutForm.StartPosition = [System.Windows.Forms.FormStartPosition]::CenterScreen
+        $popOutForm.Add_KeyDown({
+                if ($_.KeyCode -eq "Escape") {
+                    $popOutForm.Close()
+                }
+            })
+        $popOutForm.ShowDialog() | Out-Null
+    }
 
+    Start-Job -ScriptBlock $scriptBlock
 
-    $popOutForm.StartPosition = [System.Windows.Forms.FormStartPosition]::CenterScreen
-    # Show the pop-out form
-    $popOutForm.ShowDialog()
-    
 }
 
 function New-CommandArea {
@@ -166,7 +188,7 @@ function New-CommandArea {
     $TableLayoutPanel.Dock = 'Fill'
     # create command box
     $commandBox = New-Object System.Windows.Forms.TextBox
-    $commandBox.AutoCompleteMode = 'SuggestAppend'
+    $commandBox.AutoCompleteMode = 'SuggestAppend' #SuggestAppend
     $commandBox.AutoCompleteSource = 'CustomSource'
     #$commandBox.Dock = 'Fill'
     #$commandBox.Multiline = $true
@@ -175,7 +197,7 @@ function New-CommandArea {
     $commandBoxAutoCompleteSource = New-Object System.Windows.Forms.AutoCompleteStringCollection
     $commandBox.AutoCompleteCustomSource = $commandBoxAutoCompleteSource
 
- 
+
     # Erzeuge ein FlowLayoutPanel
     $flowLayoutPanel = New-Object System.Windows.Forms.FlowLayoutPanel
     $flowLayoutPanel.Dock = "Fill"
@@ -189,7 +211,7 @@ function New-CommandArea {
     #$commandLabel.AutoSize = $true
     # Create the collection of radio buttons
     $radioButtonPWSH = New-Object System.Windows.Forms.RadioButton
-    $radioButtonPWSH.Checked = $true 
+    $radioButtonPWSH.Checked = $true
     $radioButtonPWSH.Text = "pwsh"
     $radioButtonCMD = New-Object System.Windows.Forms.RadioButton
     $radioButtonCMD.Checked = $false
@@ -199,23 +221,23 @@ function New-CommandArea {
     $invokeButton.Text = "Invoke"
     $invokeButton.Anchor = "Right, top"
     #AddingControles
-   
+
     $flowLayoutPanel.Controls.Add($commandLabel)
     $flowLayoutPanel.Controls.Add($radioButtonPWSH)
     $flowLayoutPanel.Controls.Add($radioButtonCMD)
     $TableLayoutPanel.Controls.Add($flowLayoutPanel, 0, 0)
-    $TableLayoutPanel.SetColumnSpan($flowLayoutPanel, 2); 
+    $TableLayoutPanel.SetColumnSpan($flowLayoutPanel, 2);
     #$TableLayoutPanel.Controls.Add($commandLabel, 0, 0)
     #$TableLayoutPanel.Controls.Add($radioButtonPWSH, 1, 0)
     #$TableLayoutPanel.Controls.Add($radioButtonCMD, 1, 0)
 
     $TableLayoutPanel.Controls.Add($commandBox, 0, 1)
-    $TableLayoutPanel.SetColumnSpan($commandBox, 2); 
+    $TableLayoutPanel.SetColumnSpan($commandBox, 2);
     $TableLayoutPanel.Controls.Add($invokeButton, 2, 1)
-  
- 
+
+
     $l1RightPanel.Controls.Add($TableLayoutPanel)
-    
+
 
     return @{
         commandBox      = $commandBox
@@ -223,12 +245,12 @@ function New-CommandArea {
         radioButtonPWSH = $radioButtonPWSH
         commandLabel    = $commandLabel
         invokeButton    = $invokeButton
-        
+
     }
 
 }
 
-function New-TableActions {
+function New-TableAction {
     param(
         $mainPanel
     )
@@ -239,7 +261,7 @@ function New-TableActions {
     #$l2LeftPanel.BackColor = 'Gray'
     $l2LeftPanel.Size = New-Object System.Drawing.Size(0, 50)
     $mainPanel.Controls.Add($l2LeftPanel, 0, 2)
-    $mainPanel.SetColumnSpan($l2LeftPanel, 2); 
+    $mainPanel.SetColumnSpan($l2LeftPanel, 2);
     #$tableLayoutPanel.Controls.Add($l2l1rightPanel, 0, 2)
 
     # Create the table layout panel
@@ -260,11 +282,11 @@ function New-TableActions {
 
 
     $TableLayoutPanel.Controls.Add($filterLabel, 0, 0)
-    
+
     $TableLayoutPanel.Controls.Add($filterTextBox, 0, 1)
     $TableLayoutPanel.Controls.Add($uninstallButton, 3, 1)
 
-    $TableLayoutPanel.SetColumnSpan($filterTextBox, 2); 
+    $TableLayoutPanel.SetColumnSpan($filterTextBox, 2);
     $l2LeftPanel.Controls.Add($TableLayoutPanel)
 
     return   @{
@@ -285,13 +307,13 @@ function New-Table {
     $l3LeftPanel.Dock = 'Fill'
     $l3LeftPanel.Size = New-Object System.Drawing.Size(700, 200)
     #$l3LeftPanel.BackColor = 'Red'
-    
+
     $mainPanel.Controls.Add($l3LeftPanel, 0, 3)
-    $mainPanel.SetColumnSpan($l3LeftPanel, 2); 
+    $mainPanel.SetColumnSpan($l3LeftPanel, 2);
     # Create the table layout panel
     $TableLayoutPanel = New-Object System.Windows.Forms.TableLayoutPanel
     $TableLayoutPanel.Dock = 'Fill'
- 
+
 
     $l3LeftPanel.Controls.Add($TableLayoutPanel)
     # Erstellen einer Tabelle
@@ -300,7 +322,7 @@ function New-Table {
     #$table.ScrollBars = "Vertical"
     $table.SelectionMode = "FullRowSelect"
     $table.AutoSizeColumnsMode = "Fill"
- 
+
     $table.Anchor = "Top, Left, Bottom, Right"
     #$table.AutoSize = $true
     $table.MultiSelect = $false  # Nur eine Zeile auswählbar
@@ -308,8 +330,8 @@ function New-Table {
     $table = Add-TableContent -table $table
 
     $TableLayoutPanel.Controls.Add($table, 0, 0)
-   
-   
+
+
     return   @{
         table = $table
     }
@@ -333,7 +355,7 @@ function Add-TableContent {
     $colUninstallString.Name = "Uninstallstring"
     #$column2.Width = 500
     $table.Columns.Add($colUninstallString)  | Out-Null
-    $table.Columns["Uninstallstring"].Visible = $false  
+    $table.Columns["Uninstallstring"].Visible = $false
 
     # Hinzufügen von Spalten zur Tabelle
     $colVersion = New-Object System.Windows.Forms.DataGridViewTextBoxColumn
@@ -342,7 +364,7 @@ function Add-TableContent {
     $colVersion.MinimumWidth = 150
     $colVersion.FillWeight = 100
     $table.Columns.Add($colVersion)  | Out-Null
-    $table.Columns["Version"].Visible = $true  
+    $table.Columns["Version"].Visible = $true
 
     # Hinzufügen von Spalten zur Tabelle
     $colPub = New-Object System.Windows.Forms.DataGridViewTextBoxColumn
@@ -351,7 +373,7 @@ function Add-TableContent {
     $colPub.FillWeight = 150
     $colPub.Name = "Publisher"
     $table.Columns.Add($colPub)  | Out-Null
-    $table.Columns["Publisher"].Visible = $true  
+    $table.Columns["Publisher"].Visible = $true
     $table.Columns["Publisher"].DisplayIndex = 2;
 
 
@@ -362,7 +384,7 @@ function Add-TableContent {
     $colType.FillWeight = 50
     $colType.Name = "Type"
     $table.Columns.Add($colType)  | Out-Null
-    $table.Columns["Type"].Visible = $false 
+    $table.Columns["Type"].Visible = $false
 
     # Hinzufügen von Spalten zur Tabelle
     $colContext = New-Object System.Windows.Forms.DataGridViewTextBoxColumn
@@ -371,13 +393,13 @@ function Add-TableContent {
     $colContext.MinimumWidth = 50
     $colContext.FillWeight = 50
     $table.Columns.Add($colContext)  | Out-Null
-    $table.Columns["Context"].Visible = $true  
+    $table.Columns["Context"].Visible = $true
 
     return $table
 }
 
 
-function Update-TableContent { 
+function Update-TableContent {
     # Parameter help description
     param(
         $tableContent,
@@ -398,12 +420,12 @@ function Update-TableContent {
             $row.Cells[5].Value = $item.Context
             $table.Rows.Add($row) | Out-Null
         }
-        
+
     }
-  
+
     # Datenquelle nach der Spalte "Name" sortieren
     $table.Sort($table.Columns[0], [System.ComponentModel.ListSortDirection]::Ascending)
-  
+
 }
 
 function New-ExitButton {
@@ -439,13 +461,11 @@ function New-ExitButton {
 
 function New-ProgressBar {
     param (
-             
+
     )
     $progressBar = New-Object System.Windows.Forms.ProgressBar
     $progressBar.Dock = "Bottom"
-    $progressBar.MarqueeAnimationSpeed = 20    
-    #$progressBar.Visible = $false
-  
+    $progressBar.MarqueeAnimationSpeed = 20
 
     return   @{
         progressBar = $progressBar

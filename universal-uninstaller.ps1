@@ -32,28 +32,24 @@ Verweis auf weitere Informationen zum Skript.
 Add-Type -AssemblyName System.Windows.Forms
 [System.Windows.Forms.Application]::EnableVisualStyles()
 Set-StrictMode -Version Latest
-#param ( 
-# [parameter(Mandatory = $false)][string]$AppName,
-# [parameter(Mandatory = $false)][string]$AppVersion
-#)
-#$RepoDir = "C:\Program Files (x86)\LANDesk\LDClient\sdmcache\SWD\UniversalUninstaller" 
 $ScriptDir = $PSScriptRoot
-$ModuleDir = $ScriptDir + "\modules\" 
+$ModuleDir = $ScriptDir + "\modules\"
 #region ******************** TESTING ********************
 $testing = $true
 if ($testing) {
-    $targetComputer = "localhost" 
+    $targetComputer = "HAMV21738"  # localhost HAMV21738
+    $credential = "" #emea\rootmb  vboxuser
     #for testing
-    # localhost HAMV21738
 
 }
 #endregion TESTING
 #region ******************** MODULES ********************
-$GuiModule = $ModuleDir + "gui\dyngui.psm1"
-$FunctionsModule = $ModuleDir + "functions\functions.psm1"
-$GuiDetailViewModule = $ModuleDir + "guiDetailView\guiDetailView.psm1"
-$ValidationModule = $ModuleDir + "validation\validation.psm1"
-
+$modules = @(
+( $ModuleDir + "gui\dyngui.psm1" ),
+( $ModuleDir + "functions\functions.psm1" ),
+( $ModuleDir + "guiDetailView\guiDetailView.psm1" ),
+( $ModuleDir + "validation\validation.psm1" )
+)
 #endregion MODULES
 #endregion TOUCH
 
@@ -61,25 +57,23 @@ $ValidationModule = $ModuleDir + "validation\validation.psm1"
 # only change this region if necessary. e.g. add more modules or init-folders
 function Main {
     Requirements -LogText "Requirements"
-    Work -LogText "Work" 
+    Work -LogText "Work"
     Cleanup
 }
 
 Function Requirements {
     param([parameter(Mandatory = $true)][string]$LogText)
     try {
-        Import-Module $GuiModule
-        Import-Module $ValidationModule
-        Import-Module $FunctionsModule
-        Import-Module $GuiDetailViewModule
+        foreach ($module in $modules) {
+            Import-Module $module
+        }
         #check if the init-folders exist - if not create them
         $InitFolders = @($ScriptDir)
         Foreach ($Folder in $InitFolders) { If (!(test-path $Folder)) { New-Item -ItemType Directory -Force -Path $Folder } }
-        #CreateLogEntry -logMessage "OK - $LogText" 
     }
     catch {
-        Cleanup -exitCode 1
-        #"FATAL - initialisation not passed - Error at line " + $_.InvocationInfo.ScriptLineNumber + ": " + $_.Exception.Message | Out-File -FilePath ($MyInvocation.PSCommandPath + ".log") -Force
+        #Cleanup -exitCode 1
+        "FATAL - initialisation not passed - Error at line " + $_.InvocationInfo.ScriptLineNumber + ": " + $_.Exception.Message | Out-File -FilePath ($MyInvocation.PSCommandPath + "_error.log") -Force
         exit
     }
 }
@@ -87,12 +81,12 @@ Function Requirements {
 # clear variables and console output, remove modules
 Function Cleanup {
     try {
-        Get-Module | Remove-Module -Force -ErrorAction SilentlyContinue 
-        Get-Job | Stop-Job | Remove-Job -Force -ErrorAction SilentlyContinue 
-        Get-PSSession | Remove-PSSession  -ErrorAction SilentlyContinue 
+        Get-Module | Remove-Module -Force -ErrorAction SilentlyContinue
+        Get-Job | Stop-Job | Remove-Job -Force -ErrorAction SilentlyContinue
+        Get-PSSession | Remove-PSSession  -ErrorAction SilentlyContinue
         Get-Variable -Exclude exitCode, PWD, *Preference | Remove-Variable -Force -ErrorAction SilentlyContinue
-        exit 
-       
+        exit
+
     }
     catch {
         exit 1
@@ -109,15 +103,16 @@ Function Work {
     try {
         #Funktioniert nicht
         $form, $formItems = Add-Form
-        Add-FormActions -formItems $formItems -form $form
+        Add-FormAction -formItems $formItems -form $form
         $form.ShowDialog()
-        
+
     }
     catch {
         $logMessage = "FAIL - $LogText - Error at line " + $_.InvocationInfo.ScriptLineNumber + ": " + $_.Exception.Message
-        Write-host $logMessage 
+        $logMessage | Out-File -FilePath ($MyInvocation.PSCommandPath + "_error.log") -Force
+        Write-Host $logMessage
         #Cleanup -exitCode 1
-    } 
+    }
     finally {
         Cleanup
     }
@@ -127,6 +122,8 @@ function Add-Form {
     # Erstellen eines neuen Windows-Formulars
     $form = New-Object System.Windows.Forms.Form
     $form.Size = New-Object System.Drawing.Size(850, 600)
+    $form.MinimumSize = $form.Size
+
     $form.Text = "Universal Uninstaller"
     $form.KeyPreview = $true
     $form.StartPosition = [System.Windows.Forms.FormStartPosition]::CenterScreen
@@ -137,138 +134,91 @@ function Add-Form {
     #würd ich gern auf bottom und top beschränken
     $mainPanel.Padding = New-Object System.Windows.Forms.Padding(25)  # Set the padding here
 
-    #Warum ?
-    #alles noch sehr unschön hier
-    $MenuStrip = New-MenuStrip 
-    <# $ConnectArea  = New-ConnectArea -mainPanel $mainPanel
-    $OutputArea   = New-OutputArea -mainPanel $mainPanel
-    $CommandArea  = New-CommandArea -mainPanel $mainPanel
-    $TableActions = New-TableActions -mainPanel $mainPanel
-    $Table        = New-Table -mainPanel $mainPanel
-    $ExitButton   = New-ExitButton -mainPanel $mainPanel#>
 
     $formItems = @{
         ConnectArea  = New-ConnectArea -mainPanel $mainPanel
         OutputArea   = New-OutputArea -mainPanel $mainPanel
         CommandArea  = New-CommandArea -mainPanel $mainPanel
-        TableActions = New-TableActions -mainPanel $mainPanel
+        TableActions = New-TableAction -mainPanel $mainPanel
         Table        = New-Table -mainPanel $mainPanel
         ExitButton   = New-ExitButton -mainPanel $mainPanel
         ProgressBar  = New-ProgressBar
-        MenuStrip    = $MenuStrip[2] #Warum ?
-     
+        MenuStrip    = (New-MenuStrip).GetEnumerator() | Select-Object -Last 1
+
     }
-    $formItems2 = @{
-       
-        ProgressBar = New-ProgressBar
-        MenuStrip   = $MenuStrip[2] #Warum ?
-     
-    }
-    # Hinzufügen von Schaltflächen zum Formular
-    foreach ($item in $formItems2.GetEnumerator()) {
+    # Hinzufügen von ProgressBar und MenuStrip zum Formular
+    foreach ($item in $formItems.GetEnumerator() | Where-Object { $_.Name -in "ProgressBar", "MenuStrip" }) {
         foreach ($formItem in $item.Value) {
             foreach ($item in $formItem.GetEnumerator()) {
                 $form.Controls.Add($item.Value)
             }
         }
     }
-  
-    $form.Controls.Add($mainPanel)
-    #zum testen
-    #$form.ShowDialog()
 
+
+    $form.Controls.Add($mainPanel)
     return $form, $formItems
 }
 
-function Add-FormActions {
+function Add-FormAction {
     param (
         $formItems,
         $form
     )
 
-    New-ExitButtonAction -ExitButton ($formItems.ExitButton.ExitButton) -form $form -menuStrip ($formItems.menuStrip.menuStrip) 
+    New-ExitButtonAction -ExitButton ($formItems.ExitButton.ExitButton) -form $form
+    New-MenuStripAction -menuStrip ($formItems.menuStrip.menuStrip) -form $form
 
-    if ((Test-PreRequirements -ouputTextBox ($formItems.OutputArea.ouputTextBox) -requiredVersion "5.1" -requireAdminRights $true -requiredPolicy "bypass")) {
-   
-        New-SearchBoxAction -filterTextBox ($formItems.TableActions.filterTextBox) 
-        New-TableAction  -table ($formItems.Table.Table)
-        New-ConectButtonAction -ConectButton ($formItems.ConnectArea.ConnectButton) 
-        New-UninstallButtonAction -UninstallButton ($formItems.TableActions.UninstallButton) 
-        New-F5ButtonAction -form $form -table ($formItems.Table.Table)
-        New-PWSHCheckBoxChange 
-        New-InvokeButtonAction -InvokeButton ($formItems.CommandArea.invokeButton) 
+    if ((Test-PreRequirement -ouputTextBox ($formItems.OutputArea.ouputTextBox) -requiredVersion "5.1" -requireAdminRights $true -requiredPolicy "bypass")) {
+
+        New-SearchBoxAction -filterTextBox ($formItems.TableActions.filterTextBox)
+        New-TableCellDoubleClick  -table ($formItems.Table.Table)
+        New-ConectButtonAction -ConectButton ($formItems.ConnectArea.ConnectButton)
+        New-UninstallButtonAction -UninstallButton ($formItems.TableActions.UninstallButton)
+        New-F5ButtonAction #-table ($formItems.Table.Table)
+        New-PWSHCheckBoxChange -pwshCommands (Get-Command | Where-Object { $_.Module -like "Microsoft.Powershell*" } | Select-Object Name)
+        New-InvokeButtonAction -InvokeButton ($formItems.CommandArea.invokeButton)
         New-TextBoxPopOutFormAction -popOutLabel ($formItems.OutputArea.popOutLabel)
     }
 }
 
-<#
-function Test-PreRequirements {
-    param (
-        $ouputTextBox
-    )
-
-    if ((Test-IsRequiredPSVersion)) {
-        Set-DisplayBoxText -displayBox $ouputTextBox -text "Ok IsRequiredPSVersion"
-
-
-        if ((Test-IsAdminRole)) {
-            Set-DisplayBoxText -displayBox $ouputTextBox -text "Ok is admin"
-
-            if ((Test-IsCorrectExecutionPolicy)) {
-                Set-DisplayBoxText -displayBox $ouputTextBox -text "Ok IsCorrectExecutionPolicy"
-        
-            }
-            else {
-                Set-DisplayBoxText -displayBox $ouputTextBox -text "Please set IsCorrectExecutionPolicy"  
-            }        
-        }
-        else {
-            Set-DisplayBoxText -displayBox $ouputTextBox -text "Please run this program as an administrator."  
-        }
-    }
-    else {
-        Set-DisplayBoxText -displayBox $ouputTextBox -text "Please set IsRequiredPSVersion"  
-    }
-
-    
-}#>
 
 function New-ConectButtonAction {
-    param(  
-        [parameter(Mandatory = $true)]$ConectButton 
+    param(
+        [parameter(Mandatory = $true)]$ConectButton
     )
-    $global:ConnectTextlastEntries = New-Object System.Collections.Generic.List[string] 
+    $global:ConnectTextlastEntries = New-Object System.Collections.Generic.List[string]
 
     $ConectButton.Add_Click({
             try {
                 if (!$formItems.ConnectArea.HostnameBox.Text) {
 
-                    #$targetComputer = ($formItems.ConnectArea.HostnameBox).Text 
+                    #$targetComputer = ($formItems.ConnectArea.HostnameBox).Text
                     $displaybox = $formItems.OutputArea.ouputTextBox
 
-                   
+
                     Set-DisplayBoxText -displayBox $displaybox -text "Please wait while a connection to $targetComputer is established ..."
                     $global:PSSession = New-PSSession -ComputerName $targetComputer
 
                     if (!$PSSession) {
                         Set-DisplayBoxText -displayBox $displaybox -text "Please wait while a connection to $targetComputer is established ..."
-                        $PSSession = New-PSSession -ComputerName $targetComputer -Credential "emea\rootmb"
+                        $PSSession = New-PSSession -ComputerName $targetComputer -Credential $credential
                     }
                     if ($PSSession) {
-    
+
                         Set-DisplayBoxText -displayBox $displaybox -text ("Successfully connected to $targetComputer.")
-                        $InstalledApps = Invoke-Command -Session $PSSession -ScriptBlock ${function:Get-InstalledApps}
+                        $InstalledApps = Invoke-Command -Session $PSSession -ScriptBlock ${function:Get-InstalledApp}
                         Update-TableContent -tableContent $InstalledApps -table ($formItems.Table.Table)
                     }
                     else {
                         Set-DisplayBoxText -displayBox $displaybox -text ($error[0].ErrorDetails)
+
+
                     }
 
-                  
-                   
                     $formItems.CommandArea.commandBox.Clear()
                     $formItems.TableActions.filterTextBox.Clear()
-                    Set-LastEntries -text $displaybox.Text -lastEntries $ConnectTextlastEntries -autoCompleteSource ($formItems.ConnectArea.HostnameBox.AutoCompleteCustomSource)
+                    Set-LastEntrie -text $displaybox.Text -lastEntries $ConnectTextlastEntries -autoCompleteSource ($formItems.ConnectArea.HostnameBox.AutoCompleteCustomSource)
                 }
             }
             catch {
@@ -298,7 +248,7 @@ function New-SearchBoxAction {
                 }
                 $row.Visible = $match
             }
-        })  
+        })
 }
 
 function New-InvokeButtonAction {
@@ -306,24 +256,24 @@ function New-InvokeButtonAction {
         $InvokeButton
     )
 
-    $global:CommandlastEntries = New-Object System.Collections.Generic.List[string] 
+    $global:CommandlastEntries = New-Object System.Collections.Generic.List[string]
 
-    $InvokeButton.Add_Click({ 
+    $InvokeButton.Add_Click({
             try {
                 #funktioniert noch nicht 100%
                 if ($PSSession -and $PSSession.Availability -eq "Available" -and ($formItems.CommandArea.commandBox.Text)) {
-    
-                    Set-LastEntries -text $formItems.CommandArea.commandBox.Text -lastEntries $CommandlastEntries -autoCompleteSource $formItems.CommandArea.commandBox.AutoCompleteCustomSource
+
+                    Set-LastEntrie -text $formItems.CommandArea.commandBox.Text -lastEntries $CommandlastEntries -autoCompleteSource $formItems.CommandArea.commandBox.AutoCompleteCustomSource
 
                     $exitcode = Invoke-CustomCommand `
                         -command (($formItems.CommandArea.commandBox).Text) `
                         -progressBar ($formItems.ProgressBar.ProgressBar) `
                         -type "c_command" `
                         -radioButtonPWSH (($formItems.CommandArea.radioButtonPWSH).Checked)
-               
+
                     Set-DisplayBoxText -displayBox ($formItems.OutputArea.ouputTextBox) -text $exitcode
 
-                   
+
                 }
 
             }
@@ -336,12 +286,12 @@ function New-InvokeButtonAction {
         })
 }
 
-function New-TableAction {
+function New-TableCellDoubleClick {
     param (
         $table
     )
     $table.Add_CellDoubleClick({
-            Show-Details -table ($formItems.Table.Table)
+            Show-Detail -table ($formItems.Table.Table)
         })
 }
 
@@ -351,15 +301,16 @@ function New-UninstallButtonAction {
     )
     $UninstallButton.Add_Click({
             try {
-            
+
                 #funktioniert noch nicht 100%
                 if ($PSSession -and $PSSession.Availability -eq "Available") {
                     $selectedRow = ($formItems.Table.Table).selectedRows[0]
                     $selectedItemName = $selectedRow.Cells["Name"].Value
-               
-                    if ($selectedItemName) {        
+
+                    if ($selectedItemName) {
                         $result = [System.Windows.Forms.MessageBox]::Show("Do you want to uninstall '$selectedItemName' ?", "Confirm", "YesNo", "Question")
                         if ($result -eq "Yes") {
+                            #Invoke-KillProcess -displayName $selectedItemName -ErrorAction SilentlyContinue
                             $exitcode = Invoke-SilentUninstallString `
                                 -command ($selectedRow.Cells["Uninstallstring"].Value) `
                                 -progressBar ($formItems.ProgressBar.ProgressBar) `
@@ -373,18 +324,18 @@ function New-UninstallButtonAction {
                                 Default { $text = ("Unkown Status") }
                             }
 
-                            $testApp = (Invoke-Command -Session $PSSession -ScriptBlock ${function:Get-InstalledApps} -ArgumentList $selectedItemName)
-                      
+                            $testApp = (Invoke-Command -Session $PSSession -ScriptBlock ${function:Get-InstalledApp} -ArgumentList $selectedItemName)
+
                             if ($exitcode -eq 0 -and !$testApp) {
                                 [System.Windows.Forms.MessageBox]::Show("Uninstallation successful.", "Ok", "OK", "Information")
-                                Set-DisplayBoxText -displayBox ($formItems.ConnectArea.connectDisplayBox) -text $text
-                                Get-Table -formItems $formItems
-                      
+                                Set-DisplayBoxText -displayBox ($formItems.OutputArea.ouputTextBox) -text $text
+                                Get-Table -table ($formItems.Table.Table)
+
                             }
                             else {
                                 [System.Windows.Forms.MessageBox]::Show("Uninstallation not successful.", "Error", "OK", "Hand")
-                                Set-DisplayBoxText -displayBox ($formItems.ConnectArea.connectDisplayBox) -text $text
-                                Get-Table -formItems $formItems
+                                Set-DisplayBoxText -displayBox ($formItems.OutputArea.ouputTextBox) -text $text
+                                Get-Table -table ($formItems.Table.Table)
                             }
                         }
                     }
@@ -396,41 +347,64 @@ function New-UninstallButtonAction {
             }
             catch {
                 $logMessage = "FAIL - $LogText - Error at line " + $_.InvocationInfo.ScriptLineNumber + ": " + $_.Exception.Message
-                Set-DisplayBoxText -displayBox ($formItems.ConnectArea.connectDisplayBox) -text $logMessage
+                Set-DisplayBoxText -displayBox ($formItems.OutputArea.ouputTextBox) -text $logMessage
             }
-        })   
+        })
 }
 
 function New-ExitButtonAction {
     param (
         $form,
-        $ExitButton,
-        $menuStrip
+        $ExitButton
     )
-    $ExitButton.Add_Click({ 
+    $ExitButton.Add_Click({
             $form.Close()
             #Cleanup
         })
-    #Schöner!
-    $menuStrip.Items[0].DropDownItems[0].Add_Click({ 
-            $form.Close() 
-            #Cleanup
+}
+
+Function New-MenuStripAction {
+    param (
+        $menuStrip,
+        $form
+    )
+    #exit
+    $menuStrip.Items[0].DropDownItems[2].Add_Click({
+            $form.Close()
         })
-  
+
+    <#   $menuStrip.Items[0].DropDownItems[2].Add_Click({
+        $form.Close()
+    })#>
+
+    #donate
+    $menuStrip.Items[0].DropDownItems[1].Add_Click({
+            Start-Process "https://www.paypal.com/donate/?hosted_button_id=PP27RZLCAAKX2"
+        })
+
+    #about
+    $menuStrip.Items[0].DropDownItems[0].Add_Click({
+            Start-Process "https://google.com"
+        })
+
 }
 
 function New-PWSHCheckBoxChange {
-    Set-PWSHCommandAutoComplete -autoCompleteSource ($formItems.CommandArea.commandBox.AutoCompleteCustomSource)
-    ($formItems.CommandArea.radioButtonPWSH).add_CheckedChanged({ 
+    param(
+        $pwshCommands
+    )
+    $global:pwshCommands = $pwshCommands
+    Set-PWSHCommandAutoComplete -autoCompleteSource ($formItems.CommandArea.commandBox.AutoCompleteCustomSource) -pwshCommands $pwshCommands
+    ($formItems.CommandArea.radioButtonPWSH).add_CheckedChanged({
 
             if (($formItems.CommandArea.radioButtonPWSH).Checked) {
-                Set-PWSHCommandAutoComplete -autoCompleteSource ($formItems.CommandArea.commandBox.AutoCompleteCustomSource)
+                Set-PWSHCommandAutoComplete -autoCompleteSource ($formItems.CommandArea.commandBox.AutoCompleteCustomSource) -pwshCommands $pwshCommands
             }
             else {
                 ($formItems.CommandArea.commandBox.AutoCompleteCustomSource).Clear()
                 ($formItems.CommandArea.commandBox.AutoCompleteCustomSource).AddRange($CommandlastEntries)
             }
-             
+
         })
 
 
@@ -441,7 +415,7 @@ function New-TextBoxPopOutFormAction {
         $popOutLabel
     )
     # KeyDown-Ereignis der Form hinzufügen
-    
+
     $popOutLabel.Add_Click({
             if ((($formItems.OutputArea.ouputTextBox).Text)) {
                 New-TextBoxPopOutForm -text (($formItems.OutputArea.ouputTextBox).Text)
@@ -451,11 +425,10 @@ function New-TextBoxPopOutFormAction {
 
 function New-F5ButtonAction {
     param (
-        $form
-       
+        $table
     )
     # KeyDown-Ereignis der Form hinzufügen
-    
+
     $form.Add_KeyDown({
             if ($_.KeyCode -eq "F5") {
                 Get-Table -table ($formItems.Table.Table)

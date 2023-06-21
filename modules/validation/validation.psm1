@@ -21,17 +21,17 @@ function Test-PreRequirement {
                 return $true
             }
             else {
-                Set-DisplayBoxText -displayBox $ouputTextBox -text "Please set execution policy to $requiredPolicy"
+                Set-DisplayBoxText -displayBox $ouputTextBox -text "Please set execution policy to $requiredPolicy" -isError $true
                 return $false
             }
         }
         else {
-            Set-DisplayBoxText -displayBox $ouputTextBox -text "Please run this program as an administrator."
+            Set-DisplayBoxText -displayBox $ouputTextBox -text "Please run this program as an administrator." -isError $true
             return $false
         }
     }
     else {
-        Set-DisplayBoxText -displayBox $ouputTextBox -text "Please install the powershell version $requiredVersion"
+        Set-DisplayBoxText -displayBox $ouputTextBox -text "Please install the powershell version $requiredVersion" -isError $true
         return $false
     }
 }
@@ -40,18 +40,24 @@ Function Test-IsCorrectExecutionPolicy {
     param (
         $requiredPolicy
     )
-    if ((Get-ExecutionPolicy) -ne $requiredPolicy) {
-        try {
-            Set-ExecutionPolicy -ExecutionPolicy $requiredPolicy -Scope CurrentUser -Force
-            return $true
+    if ($requiredPolicy) {
+        if ((Get-ExecutionPolicy) -ne $requiredPolicy) {
+            try {
+                Set-ExecutionPolicy -ExecutionPolicy $requiredPolicy -Scope CurrentUser -Force
+                return $true
+            }
+            catch {
+                return $false
+            }
         }
-        catch {
-            return $false
+        else {
+            return $true
         }
     }
     else {
         return $true
     }
+
 }
 
 function Test-IsAdminRole {

@@ -20,8 +20,13 @@ function New-MenuStrip {
     $fileMenu = New-Object System.Windows.Forms.ToolStripMenuItem
     $fileMenu.Text = "File"
 
+    $connectedTo = New-Object System.Windows.Forms.ToolStripMenuItem
+    $connectedTo.Enabled = $false
+
+    $connectedTo.Alignment = "Right"
+
     $donateButtonItem = New-Object System.Windows.Forms.ToolStripMenuItem
-    $donateButtonItem.Text = "Donate"
+    $donateButtonItem.Text = "TBD"
 
     $aboutButtonItem = New-Object System.Windows.Forms.ToolStripMenuItem
     $aboutButtonItem.Text = "About"
@@ -34,6 +39,7 @@ function New-MenuStrip {
     $fileMenu.DropDownItems.Add($exitButtonItem)
 
     $menuStrip.Items.Add($fileMenu)
+    $menuStrip.Items.Add($connectedTo)
 
     return  @{
         menuStrip = $menuStrip
@@ -137,6 +143,7 @@ function New-TextBoxPopOutForm {
     )
 
     $scriptBlock = {
+        param($text)
         Add-Type -AssemblyName System.Windows.Forms
 
         # Create a new form to show the enlarged text box
@@ -146,9 +153,12 @@ function New-TextBoxPopOutForm {
         $popOutForm.Size = New-Object System.Drawing.Size(400, 300)
         #$popOutForm.MaximumSize = New-Object System.Drawing.Size(800, 600)
         $popOutForm.MinimumSize = New-Object System.Drawing.Size(300, 150)
+        $icon = "resources\icon.ico"
+        $popOutForm.Icon = [System.Drawing.Icon]::ExtractAssociatedIcon($icon)
+        $popOutForm.Text = "Output"
 
         $enlargedTextBox = New-Object System.Windows.Forms.RichTextBox
-        $enlargedTextBox.Text = $using:text
+        $enlargedTextBox.Text = $text
         $enlargedTextBox.Dock = "Fill"
         $enlargedTextBox.Multiline = $true
         $enlargedTextBox.ReadOnly = $true
@@ -160,14 +170,25 @@ function New-TextBoxPopOutForm {
 
         $popOutForm.StartPosition = [System.Windows.Forms.FormStartPosition]::CenterScreen
         $popOutForm.Add_KeyDown({
-                if ($_.KeyCode -eq "Escape") {
-                    $popOutForm.Close()
-                }
-            })
+            if ($_.KeyCode -eq "Escape") {
+                $popOutForm.Close()
+            }
+        })
         $popOutForm.ShowDialog() | Out-Null
     }
 
-    Start-Job -ScriptBlock $scriptBlock
+
+    
+
+    $newPowerShell = [PowerShell]::Create().AddScript($scriptBlock).AddArgument($text)
+    $job = $newPowerShell.BeginInvoke()
+    While (-Not $job.IsCompleted) {}
+    $newPowerShell.EndInvoke($job)
+    $newPowerShell.Dispose()
+
+   #$job = Start-Job -ScriptBlock $scriptBlock -Name "popOutForm" 
+    #Wait-Job $job | Out-Null
+    #Remove-Job $job
 
 }
 

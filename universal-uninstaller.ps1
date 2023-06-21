@@ -38,7 +38,7 @@ $ModuleDir = $ScriptDir + "\modules\"
 $testing = $true
 if ($testing) {
     $targetComputer = "HAMV21738"  # localhost HAMV21738
-    $credential = "" #emea\rootmb  vboxuser
+    #$credential = "" #emea\rootmb  vboxuser
     #for testing
 
 }
@@ -123,6 +123,8 @@ function Add-Form {
     $form = New-Object System.Windows.Forms.Form
     $form.Size = New-Object System.Drawing.Size(850, 600)
     $form.MinimumSize = $form.Size
+    #$icon = $PSScriptRoot + "\resources\icon.ico"
+    #$form.Icon = [System.Drawing.Icon]::ExtractAssociatedIcon($icon)
 
     $form.Text = "Universal Uninstaller"
     $form.KeyPreview = $true
@@ -169,16 +171,16 @@ function Add-FormAction {
     New-ExitButtonAction -ExitButton ($formItems.ExitButton.ExitButton) -form $form
     New-MenuStripAction -menuStrip ($formItems.menuStrip.menuStrip) -form $form
 
-    if ((Test-PreRequirement -ouputTextBox ($formItems.OutputArea.ouputTextBox) -requiredVersion "5.1" -requireAdminRights $true -requiredPolicy "bypass")) {
+    if ((Test-PreRequirement -ouputTextBox ($formItems.OutputArea.ouputTextBox) -requiredVersion "5.1" -requireAdminRights $true )) {
 
         New-SearchBoxAction -filterTextBox ($formItems.TableActions.filterTextBox)
         New-TableCellDoubleClick  -table ($formItems.Table.Table)
+        New-TextBoxPopOutFormAction -popOutLabel ($formItems.OutputArea.popOutLabel)
         New-ConectButtonAction -ConectButton ($formItems.ConnectArea.ConnectButton)
         New-UninstallButtonAction -UninstallButton ($formItems.TableActions.UninstallButton)
         New-F5ButtonAction #-table ($formItems.Table.Table)
         New-PWSHCheckBoxChange -pwshCommands (Get-Command | Where-Object { $_.Module -like "Microsoft.Powershell*" } | Select-Object Name)
         New-InvokeButtonAction -InvokeButton ($formItems.CommandArea.invokeButton)
-        New-TextBoxPopOutFormAction -popOutLabel ($formItems.OutputArea.popOutLabel)
     }
 }
 
@@ -191,30 +193,34 @@ function New-ConectButtonAction {
 
     $ConectButton.Add_Click({
             try {
-                if (!$formItems.ConnectArea.HostnameBox.Text) {
+                if ($formItems.ConnectArea.HostnameBox.Text -or $testing) {
+                    if (!$testing) { $targetComputer = ($formItems.ConnectArea.HostnameBox).Text }
 
-                    #$targetComputer = ($formItems.ConnectArea.HostnameBox).Text
                     $displaybox = $formItems.OutputArea.ouputTextBox
-
-
+                    Get-PSSession | Remove-PSSession  -ErrorAction SilentlyContinue
                     Set-DisplayBoxText -displayBox $displaybox -text "Please wait while a connection to $targetComputer is established ..."
+
                     $global:PSSession = New-PSSession -ComputerName $targetComputer
 
                     if (!$PSSession) {
-                        Set-DisplayBoxText -displayBox $displaybox -text "Please wait while a connection to $targetComputer is established ..."
-                        $PSSession = New-PSSession -ComputerName $targetComputer -Credential $credential
+                        Set-DisplayBoxText -displayBox $displaybox -text "No connection could be established to with the current credentials. Please provide administrator credentials for $targetComputer" -isError $true
+                        [PSCredential]$credential = Get-Credential
+                        $global:PSSession = New-PSSession -ComputerName $targetComputer -Credential $credential
                     }
-                    if ($PSSession) {
+                    if (!$PSSession) {
+                        Set-DisplayBoxText -displayBox $displaybox -text "Please wait while a connection to $targetComputer is established ..."
+                        Enable-PsRemoting -ComputerName $targetComputer -credential $credential
+                        $global:PSSession = New-PSSession -ComputerName $targetComputer -Credential $credential
+                    }
 
+                    if ($PSSession) {
                         Set-DisplayBoxText -displayBox $displaybox -text ("Successfully connected to $targetComputer.")
+                        Set-ConnectedTo -menuItem $formItems.menuStrip.menuStrip.Items[1] -text ("Connected to: $targetComputer")
+
                         $InstalledApps = Invoke-Command -Session $PSSession -ScriptBlock ${function:Get-InstalledApp}
                         Update-TableContent -tableContent $InstalledApps -table ($formItems.Table.Table)
                     }
-                    else {
-                        Set-DisplayBoxText -displayBox $displaybox -text ($error[0].ErrorDetails)
-
-
-                    }
+                    else { Set-DisplayBoxText -displayBox $displaybox -text ($error[0].ErrorDetails) -isError $true }
 
                     $formItems.CommandArea.commandBox.Clear()
                     $formItems.TableActions.filterTextBox.Clear()
@@ -223,7 +229,7 @@ function New-ConectButtonAction {
             }
             catch {
                 $logMessage = "FAIL - $LogText - Error at line " + $_.InvocationInfo.ScriptLineNumber + ": " + $_.Exception.Message
-                Set-DisplayBoxText -displayBox $displaybox -text $logMessage
+                Set-DisplayBoxText -displayBox $displaybox -text $logMessage -isError $true
             }
         })
 }
@@ -279,21 +285,13 @@ function New-InvokeButtonAction {
             }
             catch {
                 $logMessage = "FAIL - $LogText - Error at line " + $_.InvocationInfo.ScriptLineNumber + ": " + $_.Exception.Message
-                Set-DisplayBoxText -displayBox ($formItems.OutputArea.ouputTextBox) -text $logMessage
+                Set-DisplayBoxText -displayBox ($formItems.OutputArea.ouputTextBox) -text $logMessage -isError $true
             }
 
 
         })
 }
 
-function New-TableCellDoubleClick {
-    param (
-        $table
-    )
-    $table.Add_CellDoubleClick({
-            Show-Detail -table ($formItems.Table.Table)
-        })
-}
 
 function New-UninstallButtonAction {
     param(
@@ -334,7 +332,7 @@ function New-UninstallButtonAction {
                             }
                             else {
                                 [System.Windows.Forms.MessageBox]::Show("Uninstallation not successful.", "Error", "OK", "Hand")
-                                Set-DisplayBoxText -displayBox ($formItems.OutputArea.ouputTextBox) -text $text
+                                Set-DisplayBoxText -displayBox ($formItems.OutputArea.ouputTextBox) -text $text -isError $true
                                 Get-Table -table ($formItems.Table.Table)
                             }
                         }
@@ -347,7 +345,7 @@ function New-UninstallButtonAction {
             }
             catch {
                 $logMessage = "FAIL - $LogText - Error at line " + $_.InvocationInfo.ScriptLineNumber + ": " + $_.Exception.Message
-                Set-DisplayBoxText -displayBox ($formItems.OutputArea.ouputTextBox) -text $logMessage
+                Set-DisplayBoxText -displayBox ($formItems.OutputArea.ouputTextBox) -text $logMessage -isError $true
             }
         })
 }
@@ -357,35 +355,38 @@ function New-ExitButtonAction {
         $form,
         $ExitButton
     )
+
     $ExitButton.Add_Click({
-            $form.Close()
+
+            Close-Form -form $form
+            #$form.Close()
             #Cleanup
         })
 }
 
 Function New-MenuStripAction {
     param (
-        $menuStrip,
-        $form
+        $menuStrip
+        #$form
     )
     #exit
     $menuStrip.Items[0].DropDownItems[2].Add_Click({
             $form.Close()
         })
 
-    <#   $menuStrip.Items[0].DropDownItems[2].Add_Click({
-        $form.Close()
-    })#>
-
     #donate
     $menuStrip.Items[0].DropDownItems[1].Add_Click({
-            Start-Process "https://www.paypal.com/donate/?hosted_button_id=PP27RZLCAAKX2"
+            #Start-Process "https://www.paypal.com/donate/?hosted_button_id=PP27RZLCAAKX2"
+            Start-Process "https://google.com"
         })
 
     #about
     $menuStrip.Items[0].DropDownItems[0].Add_Click({
             Start-Process "https://google.com"
         })
+
+
+    Set-ConnectedTo -menuItem $menuStrip.Items[1] -text ("Connected to: none")
 
 }
 
@@ -410,6 +411,17 @@ function New-PWSHCheckBoxChange {
 
 }
 
+
+
+function New-TableCellDoubleClick {
+    param (
+        $table
+    )
+    $table.Add_CellDoubleClick({
+            New-DetailViewForm -table ($formItems.Table.Table)
+        })
+}
+
 function New-TextBoxPopOutFormAction {
     param (
         $popOutLabel
@@ -417,15 +429,15 @@ function New-TextBoxPopOutFormAction {
     # KeyDown-Ereignis der Form hinzufügen
 
     $popOutLabel.Add_Click({
-            if ((($formItems.OutputArea.ouputTextBox).Text)) {
-                New-TextBoxPopOutForm -text (($formItems.OutputArea.ouputTextBox).Text)
+            if ($formItems.OutputArea.ouputTextBox.Text) {
+                New-TextBoxPopOutForm -text ($formItems.OutputArea.ouputTextBox.Text)
             }
         })
 }
 
 function New-F5ButtonAction {
     param (
-        $table
+        # $table
     )
     # KeyDown-Ereignis der Form hinzufügen
 

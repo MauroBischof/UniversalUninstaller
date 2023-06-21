@@ -72,9 +72,21 @@ function Invoke-KillProcess {
         $displayName
     )
     Invoke-Command -Session $PSSession -ScriptBlock `
-    {(Get-Process | Where-Object {$using:displayName -like "*"+ $_.ProcessName +"*"} | Stop-Process -Force -Passthru)} -ErrorAction SilentlyContinue
+    { (Get-Process | Where-Object { $using:displayName -like "*" + $_.ProcessName + "*" } | Stop-Process -Force -Passthru) } -ErrorAction SilentlyContinue
 
 }
+
+function Close-Form {
+    param (
+        $form
+    )
+
+    $form.Close()
+
+}
+
+
+
 
 
 Function Invoke-SilentUninstallString {
@@ -102,6 +114,7 @@ Function Invoke-SilentUninstallString {
         }
 
         else {
+            Remove-Job -Job $job
             return 1
         }
 
@@ -109,11 +122,30 @@ Function Invoke-SilentUninstallString {
         if ($progressBarStatus -ne 124) {
             return ($job.ChildJobs[0].Output[0].ExitCode)
         }
-        else { return $progressBarStatus }
+        else {
+            Remove-Job -Job $job
+            return $progressBarStatus
+        }
     }
     catch {
         $logMessage = "FAIL - Error at line " + $_.InvocationInfo.ScriptLineNumber + ": " + $_.Exception.Message
     }
+}
+
+function Enable-PsRemoting {
+    param (
+        $ComputerName,
+        [PSCredential]$Credential
+    )
+    try {
+        $session = New-CimSession -ComputerName $ComputerName -Credential $Credential
+        Invoke-CimMethod -CimSession $session -Namespace "root/cimv2" -ClassName "Win32_Process" -MethodName "Create" -Arguments @{CommandLine = "powershell.exe -Command Enable-PSRemoting -Force -SkipNetworkProfileCheck" }
+        $session | Remove-CimSession
+        Start-Sleep -Seconds 5
+    }
+    catch {    }
+
+
 }
 
 function Invoke-CustomCommand {
@@ -129,6 +161,7 @@ function Invoke-CustomCommand {
             #$command = "'" + $command + "'"
             $job = Invoke-Command  -Session $PSSession -ScriptBlock `
             { (powershell.exe -WindowStyle hidden "$using:command" 2>&1 ) } -AsJob
+
         }
         else {
             $job = Invoke-Command  -Session $PSSession -ScriptBlock `
@@ -136,20 +169,47 @@ function Invoke-CustomCommand {
         }
 
         $progressBarStatus = Set-ProgressBar -progressBar $progressBar -job $job
+
+
+
+        if ($job.State -eq "Completed") {
+            $output = $job.ChildJobs[0].Output
+            $output
+        }
+        else {
+            $errorS = $job.ChildJobs[0].Error
+            Write-Host "Error executing command on $remoteComputer " +"`n$error" -ForegroundColor Red
+        }
+
+
         if ($progressBarStatus -ne 124) {
             $output = $job.ChildJobs[0].Output | Out-String
 
             $decodedString = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::Default.GetBytes($output))
 
+            Remove-Job -Job $job
             return $decodedString
         }
-        else { return $progressBarStatus }
+        else {
+            Remove-Job -Job $job
+            return $progressBarStatus
+        }
     }
     else {
         return 1
     }
 
 }
+
+function Set-ConnectedTo {
+    param (
+        $menuItem,
+        $text
+    )
+
+    $menuItem.text = $text
+}
+
 
 Function Set-ProgressBar {
     param (
@@ -162,7 +222,6 @@ Function Set-ProgressBar {
         $progressBar.Style = "Marquee"
         [System.Windows.Forms.Application]::DoEvents()
 
-        #auf 60 erhöhren nach dem tests, timeout
         if ($stopwatch.Elapsed.TotalSeconds -gt 60) {
             $stopwatch.Stop()
             $progressBar.Style = "Continuous"
@@ -196,10 +255,17 @@ Function Get-Table {
 Function Set-DisplayBoxText {
     param (
         $displayBox,
-        $text
+        $text,
+        $isError
     )
     $displayBox.Clear()
     $displayBox.AppendText($text)
+    if ($isError) {
+        $displayBox.ForeColor = "Red"
+    }
+    else {
+        $displayBox.ForeColor = "Black"
+    }
 
 }
 

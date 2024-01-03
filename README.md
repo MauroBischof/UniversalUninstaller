@@ -1,1 +1,1 @@
-# universal-uninstaller
+# Universal Uninstaller

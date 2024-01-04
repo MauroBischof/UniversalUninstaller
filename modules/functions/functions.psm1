@@ -4,8 +4,6 @@
    . . .
    #>
 
-#region LOGGING
-
 Set-StrictMode -Version Latest
 
 function Get-Base64 {

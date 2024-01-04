@@ -100,7 +100,7 @@ Function Work {
         $LogText
     )
     try {
-        #Funktioniert nicht
+
         $form, $formItems = Add-Form
         Add-FormAction -formItems $formItems -form $form
         $form.ShowDialog()
@@ -148,7 +148,7 @@ function Add-Form {
         MenuStrip    = (New-MenuStrip).GetEnumerator() | Select-Object -Last 1
 
     }
-    # Hinzufügen von ProgressBar und MenuStrip zum Formular
+
     foreach ($item in $formItems.GetEnumerator() | Where-Object { $_.Name -in "ProgressBar", "MenuStrip" }) {
         foreach ($formItem in $item.Value) {
             foreach ($item in $formItem.GetEnumerator()) {
@@ -408,7 +408,7 @@ function New-TextBoxPopOutFormAction {
 function New-CommandBoxPopOutFormAction {
     param (
     )
-    #Hübscher?
+
     $formitems.CommandArea.popOutLabel.Add_Click({
             $commandBox = $form.controls[2].controls[2].controls[0].controls[1]
             $mlcommandBox = $form.controls[2].controls[2].controls[0].controls[2]

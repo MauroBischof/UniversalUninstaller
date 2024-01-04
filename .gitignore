@@ -2,5 +2,4 @@
 *
 
 # But not these files...
-!.gitignore
 !universal uninstaller.ps1

@@ -15,22 +15,18 @@ function New-DetailViewForm {
         $OutputArea
     )
 
-    <# $scriptBlock = {
-        param($table)
-#>
+
     $selectedRow = $table.selectedRows[0]
     Add-Type -AssemblyName System.Windows.Forms
 
-    #$selectedRows = $table.selectedRows
 
-   
+
+
 
     $detailsForm = New-Object System.Windows.Forms.Form
     $detailsForm.Size = New-Object System.Drawing.Size(400, 250)
     $detailsForm.MinimumSize = $detailsForm.Size
     $detailsForm.Name = "detailsForm"
-    #$icon = "resources\icon.ico"
-    #$detailsForm.Icon = [System.Drawing.Icon]::ExtractAssociatedIcon($icon)
 
     $detailsForm.Text = "Details"
     $detailsForm.KeyPreview = $true
@@ -104,35 +100,16 @@ function New-DetailViewForm {
     $stringTextBox.Text = $selectedRow.Cells["Context"].Value
     $stringTextBox.Size = New-Object System.Drawing.Size(($detailsForm.Size.Width - 150), 20)
     $tableLayoutPanel.Controls.Add($stringTextBox, 1, 4)
-    
+
     foreach ($item in $OutputArea.Controls)
     {
         $OutputArea.Controls.Remove($item)
     }
     $OutputArea.Controls.Add($tableLayoutPanel)
-  
-     
-    <#        $detailsForm.Controls.Add($tableLayoutPanel)
 
-        $detailsForm.StartPosition = [System.Windows.Forms.FormStartPosition]::CenterScreen
-        $detailsForm.Add_KeyDown({
-                if ($_.KeyCode -eq "Escape") {
-                    $detailsForm.Close()
-                }
-            })
 
-        $detailsForm.ShowDialog() | Out-Null
 
-#>
 }
-<#
 
-    $newPowerShell = [PowerShell]::Create().AddScript($scriptBlock).AddArgument($table)
-    $job = $newPowerShell.BeginInvoke()
-    While (-Not $job.IsCompleted) {}
-    $newPowerShell.EndInvoke($job)
-    $newPowerShell.Dispose()
-#>
-#}
 
 Export-ModuleMember -Function New-DetailViewForm

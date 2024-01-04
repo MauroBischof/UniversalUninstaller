@@ -330,10 +330,10 @@ function New-TableAction {
     $filterTextBox = New-Object System.Windows.Forms.TextBox
     $filterTextBox.Dock = 'Fill'
     $filterTextBox.Size = New-Object System.Drawing.Size(200)
-   
 
-    
-   
+
+
+
     # Button a TextBox control for filtering
     $uninstallButton = New-Object System.Windows.Forms.Button
     $uninstallButton.Text = "Uninstall"
@@ -354,7 +354,7 @@ function New-TableAction {
         filterTextBox   = $filterTextBox
         filterLabel     = $filterLabel
         uninstallButton = $uninstallButton
-       
+
     }
 }
 
@@ -369,7 +369,6 @@ function New-Table {
     $l3LeftPanel.Dock = 'Fill'
     $l3LeftPanel.Name = 'Table'
     $l3LeftPanel.MinimumSize = New-Object System.Drawing.Size(700, 230)
-    #$l3LeftPanel.BackColor = 'Lightgray'
 
     $mainPanel.Controls.Add($l3LeftPanel, 0, 3)
     $mainPanel.SetColumnSpan($l3LeftPanel, 2);
@@ -382,19 +381,13 @@ function New-Table {
     # Erstellen einer Tabelle
     $table = New-Object System.Windows.Forms.DataGridView
     $table.Anchor = 'Top, Bottom, Left, Right'
-    #$table.ScrollBars = "Vertical"
     $table.SelectionMode = "FullRowSelect"
     $table.AutoSizeColumnsMode = "Fill"
-   
-    #$table.Dock = "Fill"
-    #$table.AutoSizeColumnsMode = "Fill"
-    #$table.AutoSizeRowsMode = "AllCells"
-    #$table.RowsDefaultCellStyle.WrapMode = "True"
 
-    
+
+
 
     $table.Anchor = "Top, Left, Bottom, Right"
-    #$table.AutoSize = $true
     $table.MultiSelect = $false  # Nur eine Zeile auswählbar
     $table.ReadOnly = $true
     $table = Add-TableContent -table $table
@@ -508,14 +501,14 @@ function New-Footer {
     $l4MiddlePanel = New-Object System.Windows.Forms.Panel
     $l4MiddlePanel.Dock = 'Bottom'
     $l4MiddlePanel.Name = 'Footer'
-    #$l4MiddlePanel.BackColor = 'green'
+
     $l4MiddlePanel.Size = New-Object System.Drawing.Size(0, 25)
     $mainPanel.Controls.Add($l4MiddlePanel, 0, 4)
     # Create the table layout panel
     $TableLayoutPanel = New-Object System.Windows.Forms.TableLayoutPanel
     $TableLayoutPanel.Dock = 'Fill'
 
-    
+
     $saveButton = New-Object System.Windows.Forms.Button
     $saveButton.Text = "Save"
     $saveButton.Anchor = "left, bottom"

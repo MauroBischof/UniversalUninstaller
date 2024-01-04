@@ -15,8 +15,7 @@ function New-ComputerViewForm {
         $OutputArea
     )
 
-  <#    $scriptBlock = {
-        param($systemInfo) #>
+
 
         Add-Type -AssemblyName System.Windows.Forms
 
@@ -24,13 +23,12 @@ function New-ComputerViewForm {
         $detailsForm.Size = New-Object System.Drawing.Size(400, 250)
         $detailsForm.MinimumSize = $detailsForm.Size
         $detailsForm.Name = "detailsForm"
-        #$icon = "resources\icon.ico"
-        #$detailsForm.Icon = [System.Drawing.Icon]::ExtractAssociatedIcon($icon)
+
 
         $detailsForm.Text = "Details"
         $detailsForm.KeyPreview = $true
         $detailsForm.Dock = 'Fill'
-        $detailsForm.Padding = New-Object System.Windows.Forms.Padding(10)  # Set the padding here
+        $detailsForm.Padding = New-Object System.Windows.Forms.Padding(10)
 
         $tableLayoutPanel = New-Object System.Windows.Forms.TableLayoutPanel
         $tableLayoutPanel.Dock = "Fill"
@@ -109,7 +107,7 @@ function New-ComputerViewForm {
         $OSArchitectureabeTextBox.Size = New-Object System.Drawing.Size(($detailsForm.Size.Width - 150), 20)
         $OSArchitectureabeTextBox.Text = $systemInfo.OSInfo.OSArchitecture
         $tableLayoutPanel.Controls.Add($OSArchitectureabeTextBox, 1, 5)
- 
+
 
         foreach ($item in $OutputArea.Controls)
         {
@@ -118,25 +116,8 @@ function New-ComputerViewForm {
         $OutputArea.Controls.Add($tableLayoutPanel)
 
 
- <#       $detailsForm.Controls.Add($tableLayoutPanel)
 
-        $detailsForm.StartPosition = [System.Windows.Forms.FormStartPosition]::CenterScreen
-        $detailsForm.Add_KeyDown({
-                if ($_.KeyCode -eq "Escape") {
-                    $detailsForm.Close()
-                }
-            })
-
-        $detailsForm.ShowDialog() | Out-Null #>
     }
-<#
 
-    $newPowerShell = [PowerShell]::Create().AddScript($scriptBlock).AddArgument($systemInfo)
-    $job = $newPowerShell.BeginInvoke()
-    While (-Not $job.IsCompleted) {}
-    $newPowerShell.EndInvoke($job)
-    $newPowerShell.Dispose()
-#>
-#}
 
 Export-ModuleMember -Function New-ComputerViewForm

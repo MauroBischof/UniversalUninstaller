@@ -161,13 +161,13 @@ function Get-SystemInfo {
     $systemInfo = Receive-Job -name "systemInfo" -Keep
     return $systemInfo
 }
-function Start-SystemInfo {    
+function Start-SystemInfo {
 
     Invoke-SystemInfo
 }
 
 function Invoke-SystemInfo {
-   
+
     $SystemInfo = Invoke-Command -Session $PSSession -ScriptBlock {
 
         $systemInfo = @{}
@@ -176,7 +176,7 @@ function Invoke-SystemInfo {
         $Memory = $Memory.ToString() + " GB"
         $systemInfo.Add("Memory", $Memory)
 
-        $CPU = (Get-CimInstance -Class Win32_Processor | Select-Object -Property Name).Name 
+        $CPU = (Get-CimInstance -Class Win32_Processor | Select-Object -Property Name).Name
         $systemInfo.Add("CPU", $cpu)
 
         $OSInfo = Get-CimInstance -Class Win32_OperatingSystem | Select-Object -Property Caption, CSName, BuildNumber, OSArchitecture
@@ -184,7 +184,7 @@ function Invoke-SystemInfo {
 
         $BiosInfo =  Get-CimInstance Win32_BIOS | Select-Object -Property Manufacturer, SerialNumber
         $systemInfo.Add("BiosInfo",  $BiosInfo)
-    
+
         $Disk = (Get-CimInstance Win32_LogicalDisk | Where-Object {$_.DeviceID -like "C:"} | Measure-Object -Property Size -Sum).Sum / 1gb
         $Disk = [math]::Round($disk).ToString() + " GB"
         $systemInfo.Add("Disk",  $Disk)
@@ -194,7 +194,7 @@ function Invoke-SystemInfo {
 
         return $systemInfo
 
-    } -AsJob -JobName "SystemInfo" 
+    } -AsJob -JobName "SystemInfo"
 
 }
 
@@ -237,7 +237,7 @@ Function Invoke-SilentUninstallString {
         }
     }
     catch {
-        #$logMessage = "FAIL - Error at line " + $_.InvocationInfo.ScriptLineNumber + ": " + $_.Exception.Message
+
     }
 }
 
@@ -255,7 +255,7 @@ Function New-SaveFileDialog {
         $headerRow = $table.Columns | ForEach-Object { $_.Name }
         $headerRow -join ";" | Out-File -Encoding UTF8 -FilePath $csvPath
 
-        $rows = $table.Rows 
+        $rows = $table.Rows
         $rows | ForEach-Object {
             $rowData = $_.Cells | ForEach-Object { $_.Value }
             $rowData -join ";" | Out-File -Append -Encoding UTF8 -FilePath $csvPath
@@ -336,7 +336,6 @@ Function Get-Table {
     param( $table
     )
 
-    #funktioniert noch nicht 100%
     if ($PSSession -and $PSSession.Availability -eq "Available") {
 
         $table.Rows.Clear()
@@ -353,13 +352,11 @@ function Set-LastEntry {
         $autoCompleteSource
     )
 
-    #$text = $text.Trim()
 
-    # Hinzufügen der Eingabe zu den letzten Eingaben
     if (-not [string]::IsNullOrWhiteSpace($text) -and (-not $lastEntries.Contains($text))) {
         $lastEntries.Add($text)
 
-        # Begrenzung der Anzahl der letzten Eingaben auf fünf
+
         if ($lastEntries.Count -gt 10) {
             $lastEntries.RemoveAt(0)
         }
@@ -374,7 +371,7 @@ function Set-PWSHCommandAutoComplete {
         $autoCompleteSource,
         $pwshCommands
     )
-    #wird jedes mal neu aufgerufen?
+
     $filteredCommands = @();
     foreach ($item in $pwshCommands) {
         $filteredCommands += $item.Name
@@ -411,11 +408,11 @@ function Get-CSVData {
     $result = $openFileDialog.ShowDialog()
     if ($result -eq [Windows.Forms.DialogResult]::OK) {
         $selectedFile = $openFileDialog.FileName
-        if (Test-Path $selectedFile -PathType Leaf) {     
+        if (Test-Path $selectedFile -PathType Leaf) {
             $csvData = Import-Csv -Path $selectedFile -Delimiter $config.CSVDelimiter -Header 'Hostname', 'GUID'
             if ($csvData) { return $csvData }
-        } 
-    }      
+        }
+    }
 }
 
 Export-ModuleMember -Function *

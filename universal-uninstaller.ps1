@@ -39,7 +39,6 @@ $global:PSSession = $null
 
 # Read the JSON content from the file
 $configFile = "config.json"
-#$config = ConvertFrom-Json (Get-Content -Raw -Path "config.json")
 #region ******************** TESTING ********************
 
 #endregion TESTING
@@ -70,10 +69,6 @@ Function Requirements {
             Import-Module $module
         }
 
-
-        #check if the init-folders exist - if not create them
-        #$InitFolders = @($ScriptDir)
-        #Foreach ($Folder in $InitFolders) { If (!(test-path $Folder)) { New-Item -ItemType Directory -Force -Path $Folder } }
     }
     catch {
         "FATAL - initialisation not passed - Error at line " + $_.InvocationInfo.ScriptLineNumber + ": " + $_.Exception.Message | Out-File -FilePath ($MyInvocation.PSCommandPath + "_error.log") -Force
@@ -113,8 +108,7 @@ Function Work {
     }
     catch {
         Write-Error ("FAIL - $LogText - Error at line " + $_.InvocationInfo.ScriptLineNumber + ": " + $_.Exception.Message)
-        #$logMessage | Out-File -FilePath ($MyInvocation.PSCommandPath + "_error.log") -Force
-        #Write-Host $logMessage
+
     }
     finally {
         Cleanup
@@ -126,8 +120,6 @@ function Add-Form {
     $form = New-Object System.Windows.Forms.Form
     $form.Size = New-Object System.Drawing.Size(1200, 600)
     $form.MinimumSize = $form.Size
-    #$icon = $PSScriptRoot + "\resources\icon.ico"
-    #$form.Icon = [System.Drawing.Icon]::ExtractAssociatedIcon($icon)
     $form.Icon = [System.Drawing.Icon]::FromHandle(([System.Drawing.Bitmap]::new((Get-Base64)).GetHIcon()))
 
 
@@ -139,7 +131,7 @@ function Add-Form {
     $mainPanel = New-Object System.Windows.Forms.TableLayoutPanel
     $mainPanel.Dock = 'Fill'
     $mainPanel.Name = "mainPanel"
-    #würd ich gern auf bottom und top beschränken
+
     $mainPanel.Padding = New-Object System.Windows.Forms.Padding(10, 25, 10, 25)
 
 
@@ -256,11 +248,9 @@ function New-InvokeButtonAction {
 
     $InvokeButton.Add_Click({
             try {
-                #funktioniert noch nicht 100%
-                #Hübscher?
+
                 if ($PSSession -and $PSSession.Availability -eq "Available" -and ($formItems.CommandArea.commandBox.Text -or $formItems.CommandArea.mlcommandBox.Text)) {
 
-                    #Hübscher?
                     if ($formItems.CommandArea.commandBox.Text) {
                         $command = $formItems.CommandArea.commandBox.Text
                     }
@@ -407,7 +397,6 @@ function New-TextBoxPopOutFormAction {
         $popOutLabel,
         $icon
     )
-    # KeyDown-Ereignis der Form hinzufügen
 
     $popOutLabel.Add_Click({
             if ($formItems.OutputArea.ouputTextBox.Text) {
@@ -504,16 +493,14 @@ function New-ExitButtonAction {
     $ExitButton.Add_Click({
 
             Close-Form -form $form
-            #$form.Close()
-            #Cleanup
+
         })
 }
 
 function New-F5ButtonAction {
     param (
-        # $table
-    )
-    # KeyDown-Ereignis der Form hinzufügen
+      )
+
 
     $form.Add_KeyDown({
             if ($_.KeyCode -eq "F5") {

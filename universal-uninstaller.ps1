@@ -206,7 +206,7 @@ function New-ConectButtonAction {
                     Get-PSSession | Remove-PSSession  -ErrorAction SilentlyContinue
                     Set-DisplayBoxText -displayBox $displaybox -text "Please wait while a connection to $targetComputer is established ..."
 
-                    $global:PSSession = New-PSSession -ComputerName $targetComputer | Out-Null
+                    $global:PSSession = New-PSSession -ComputerName $targetComputer
 
                     if (!$PSSession) {
                         Set-DisplayBoxText -displayBox $displaybox -text "No connection could be established to with the current credentials. Please provide administrator credentials for $targetComputer" -isError $true

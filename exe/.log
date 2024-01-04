@@ -1,0 +1,34 @@
+﻿**********************
+nStart der Windows PowerShell-Aufzeichnung
+Startzeit: 20240104192916
+Benutzername: PC-MAURO\Mauro
+RunAs-Benutzer: PC-MAURO\Mauro
+Konfigurationsname: 
+Computer: PC-MAURO (Microsoft Windows NT 6.2.9200.0)
+Hostanwendung: C:\Users\Mauro\OneDrive\GitHub\universal-uninstaller\exe\universal-uninstaller.exe
+Prozess-ID: 1808
+PSVersion: 5.1.22621.2506
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.22621.2506
+BuildVersion: 10.0.22621.2506
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+New-PSSession : [HAMV217s38] Beim Verbinden mit dem Remoteserver "HAMV217s38" ist folgender Fehler aufgetreten: Der 
+WinRM-Client kann die Anforderung nicht verarbeiten, weil der Servername nicht aufgelöst werden kann. Weitere 
+Informationen finden Sie im Hilfethema "about_Remote_Troubleshooting".
+In Zeile:216 Zeichen:41
++ ... lobal:PSSession = New-PSSession -ComputerName $targetComputer | Out-N ...
++                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OpenError: (System.Manageme....RemoteRunspace:RemoteRunspace) [New-PSSession], 
+PSRemotingTransportException
+    + FullyQualifiedErrorId : ComputerNotFound,PSSessionOpenFailed
+Set-DisplayBoxText : No connection could be established to with the current credentials. Please provide administrator 
+credentials for HAMV217s38
+In Zeile:219 Zeichen:25
++ ...             Set-DisplayBoxText -displayBox $displaybox -text "No conn ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [Write-Error], WriteErrorException
+    + FullyQualifiedErrorId : Microsoft.PowerShell.Commands.WriteErrorException,Set-DisplayBoxText

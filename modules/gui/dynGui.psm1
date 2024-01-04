@@ -9,30 +9,38 @@
 Set-StrictMode -Version Latest
 
 
-
-
 function New-MenuStrip {
     param (
     )
 
     $menuStrip = New-Object System.Windows.Forms.MenuStrip
+    $menuStrip.Name = "MenuStrip"
+    $menuStrip.BackColor = 'AliceBlue'
 
     $fileMenu = New-Object System.Windows.Forms.ToolStripMenuItem
     $fileMenu.Text = "File"
+    $fileMenu.Name = "FileMenu"
 
     $connectedTo = New-Object System.Windows.Forms.ToolStripMenuItem
-    $connectedTo.Enabled = $false
+    #$connectedTo.Enabled = $false
+    $connectedTo.Text = "connectedTo"
+    $connectedTo.Name = "connectedTo"
 
     $connectedTo.Alignment = "Right"
 
     $donateButtonItem = New-Object System.Windows.Forms.ToolStripMenuItem
-    $donateButtonItem.Text = "TBD"
+    $donateButtonItem.Text = "Donate"
+    $donateButtonItem.Name = "donateButton"
+    $donateButtonItem.Visible = $False
 
     $aboutButtonItem = New-Object System.Windows.Forms.ToolStripMenuItem
     $aboutButtonItem.Text = "About"
+    $aboutButtonItem.Name = "aboutButton"
+    $aboutButtonItem.Visible = $False
 
     $exitButtonItem = New-Object System.Windows.Forms.ToolStripMenuItem
     $exitButtonItem.Text = "Exit"
+    $exitButtonItem.Name = "exitButton"
 
     $fileMenu.DropDownItems.Add($aboutButtonItem)
     $fileMenu.DropDownItems.Add($donateButtonItem)
@@ -54,7 +62,9 @@ function New-ConnectArea {
     # Create the top left panel
     $l0LeftPanel = New-Object System.Windows.Forms.Panel
     $l0LeftPanel.Dock = 'Top'
-    #$l0LeftPanel.BackColor = 'LightGreen'
+    $l0LeftPanel.Name = "ConnectArea"
+    $l0LeftPanel.Size = New-Object System.Drawing.Size(700, 80)
+    #$l0LeftPanel.BackColor = 'Lightgray'
     $mainPanel.Controls.Add($l0LeftPanel, 0, 0)
     # Create the table layout panel
     $TableLayoutPanel = New-Object System.Windows.Forms.TableLayoutPanel
@@ -83,10 +93,7 @@ function New-ConnectArea {
         hostNameBox   = $hostNameBox
         hostNameLabel = $hostNameLabel
         connectButton = $connectButton
-
     }
-
-
 }
 
 function New-OutputArea {
@@ -95,19 +102,27 @@ function New-OutputArea {
     )
 
     # Create the top panel
-    $l0RightPanel = New-Object System.Windows.Forms.Panel
-    $l0RightPanel.Dock = 'Top'
-    #$l0RightPanel.BackColor = 'LightBlue'
-    $mainPanel.Controls.Add($l0RightPanel, 1, 0)
+    $00RightPanel = New-Object System.Windows.Forms.Panel
+    $00RightPanel.Dock = 'Fill'
+    $00RightPanel.Name = 'OutputArea'
+    #$00RightPanel.Size = New-Object System.Drawing.Size(0, 80)
+
+   # $00RightPanel.BackColor = 'LightBlue'
+    #$mainPanel.Controls.Add($l00RightPanel, 1, 0)
+    $mainPanel.SetRowSpan($00RightPanel, 5)
+    $mainPanel.Controls.Add($00RightPanel, 2, 0)
     # Create the table layout panel
     $TableLayoutPanel = New-Object System.Windows.Forms.TableLayoutPanel
+
     $TableLayoutPanel.Dock = 'Fill'
-    $l0RightPanel.Controls.Add($TableLayoutPanel)
+    $00RightPanel.Controls.Add($TableLayoutPanel)
     # Erstellen einer Anzeigefeld
     $ouputTextBox = New-Object System.Windows.Forms.RichTextBox
     $ouputTextBox.ReadOnly = $true
     $ouputTextBox.Multiline = $true
     $ouputTextBox.Dock = 'Fill'
+    $ouputTextBox.Margin = '0,0,0,15'
+    $ouputTextBox.Size = New-Object System.Drawing.Size(0, 220)
     # Create a new Label control
     $ouputTextBoxLabel = New-Object System.Windows.Forms.Label
     $ouputTextBoxLabel.Text = "Output:"
@@ -127,11 +142,16 @@ function New-OutputArea {
     $TableLayoutPanel.Controls.Add($ouputTextBoxLabel, 0, 0)
     $TableLayoutPanel.Controls.Add($ouputTextBox, 0, 1)
 
+    $detailPanel = New-Object System.Windows.Forms.Panel
+    $detailPanel.BackColor = 'lightgray'
+    $detailPanel.Dock = 'Fill'
+    $TableLayoutPanel.Controls.Add($detailPanel, 0, 4)
+
     return @{
         ouputTextBoxLabel = $ouputTextBoxLabel
         ouputTextBox      = $ouputTextBox
         popOutLabel       = $popOutLabel
-
+        detailPanel       = $detailPanel
     }
 
 
@@ -149,12 +169,11 @@ function New-TextBoxPopOutForm {
         # Create a new form to show the enlarged text box
         $popOutForm = New-Object System.Windows.Forms.Form
         $popOutForm.AutoSize = $true
-        #$popOutForm.Height = ($Height - 100)
-        $popOutForm.Size = New-Object System.Drawing.Size(400, 300)
-        #$popOutForm.MaximumSize = New-Object System.Drawing.Size(800, 600)
+        $popOutForm.Name = "popOutForm"
+        $popOutForm.Size = New-Object System.Drawing.Size(600, 400)
         $popOutForm.MinimumSize = New-Object System.Drawing.Size(300, 150)
-        $icon = "resources\icon.ico"
-        $popOutForm.Icon = [System.Drawing.Icon]::ExtractAssociatedIcon($icon)
+        #$icon = "resources\icon.ico"
+        #$popOutForm.Icon = [System.Drawing.Icon]::ExtractAssociatedIcon($icon)
         $popOutForm.Text = "Output"
 
         $enlargedTextBox = New-Object System.Windows.Forms.RichTextBox
@@ -162,33 +181,26 @@ function New-TextBoxPopOutForm {
         $enlargedTextBox.Dock = "Fill"
         $enlargedTextBox.Multiline = $true
         $enlargedTextBox.ReadOnly = $true
-        #$enlargedTextBox.Width = ($Width - 20)
-        #$enlargedTextBox.Height = ($enlargedTextBox.GetLineFromCharIndex($enlargedTextBox.Text.Length) + 1) * $enlargedTextBox.Font.Height + $enlargedTextBox.Margin.Vertical
-        #$enlargedTextBox.MaximumSize = New-Object System.Drawing.Size($Width, ($Height - 40))
 
         $popOutForm.Controls.Add($enlargedTextBox)
 
         $popOutForm.StartPosition = [System.Windows.Forms.FormStartPosition]::CenterScreen
         $popOutForm.Add_KeyDown({
-            if ($_.KeyCode -eq "Escape") {
-                $popOutForm.Close()
-            }
-        })
+                if ($_.KeyCode -eq "Escape") {
+                    $popOutForm.Close()
+                }
+            })
         $popOutForm.ShowDialog() | Out-Null
     }
 
 
-    
+
 
     $newPowerShell = [PowerShell]::Create().AddScript($scriptBlock).AddArgument($text)
     $job = $newPowerShell.BeginInvoke()
     While (-Not $job.IsCompleted) {}
     $newPowerShell.EndInvoke($job)
     $newPowerShell.Dispose()
-
-   #$job = Start-Job -ScriptBlock $scriptBlock -Name "popOutForm" 
-    #Wait-Job $job | Out-Null
-    #Remove-Job $job
 
 }
 
@@ -198,12 +210,12 @@ function New-CommandArea {
     )
 
     # Create the bottom panel
-    $l1RightPanel = New-Object System.Windows.Forms.Panel
-    $l1RightPanel.Dock = 'Fill'
-    $l1RightPanel.Size = New-Object System.Drawing.Size(0, 100)
-    #$l1RightPanel.BackColor = 'LightGray'
-
-    $mainPanel.Controls.Add($l1RightPanel, 1, 1)
+    $l1MiddlePanel = New-Object System.Windows.Forms.Panel
+    $l1MiddlePanel.Dock = 'Fill'
+    $l1MiddlePanel.Name = 'CommandArea'
+    $l1MiddlePanel.Size = New-Object System.Drawing.Size(0, 100)
+    #$l1MiddlePanel.BackColor = 'LightGray'
+    $mainPanel.Controls.Add($l1MiddlePanel, 0, 1)
     # Create the table layout panel
     $TableLayoutPanel = New-Object System.Windows.Forms.TableLayoutPanel
     $TableLayoutPanel.Dock = 'Fill'
@@ -211,20 +223,43 @@ function New-CommandArea {
     $commandBox = New-Object System.Windows.Forms.TextBox
     $commandBox.AutoCompleteMode = 'SuggestAppend' #SuggestAppend
     $commandBox.AutoCompleteSource = 'CustomSource'
-    #$commandBox.Dock = 'Fill'
-    #$commandBox.Multiline = $true
-    $commandBox.Size = New-Object System.Drawing.Size(450)
-    #$commandBox.MaximumSize = New-Object System.Drawing.Size(800)
+    $commandBox.ScrollBars = "Vertical"
+    $commandBox.Name = "commandBox"
+    $commandBox.Size = New-Object System.Drawing.Size(450, 50)
     $commandBoxAutoCompleteSource = New-Object System.Windows.Forms.AutoCompleteStringCollection
     $commandBox.AutoCompleteCustomSource = $commandBoxAutoCompleteSource
+    $popOutLabel = New-Object System.Windows.Forms.Label
+    $popOutLabel.Text = "+"
+    $popOutLabel.Font = New-Object System.Drawing.Font("System", 12)
+    $popOutLabel.AutoSize = $true
+    $popOutLabel.Cursor = [System.Windows.Forms.Cursors]::Hand
+    $popOutLabel.Dock = 'Right'
+    $popOutLabel.Name = 'popOutLabel'
+    $commandBox.Controls.Add($popOutLabel)
 
-
+    $mlCommandBox = New-Object System.Windows.Forms.TextBox
+    $mlCommandBox.Multiline = $true
+    $mlCommandBox.Visible = $false
+    $mlCommandBox.ScrollBars = "Vertical"
+    $mlCommandBox.Name = "mlCommandBox"
+    $mlCommandBox.Size = New-Object System.Drawing.Size(465, 70)
+    $mlPopOutLabel = New-Object System.Windows.Forms.Label
+    $mlPopOutLabel.Text = "-"
+    $mlPopOutLabel.Font = New-Object System.Drawing.Font("System", 13)
+    $mlPopOutLabel.AutoSize = $true
+    $mlPopOutLabel.Cursor = [System.Windows.Forms.Cursors]::Hand
+    $mlPopOutLabel.Dock = 'Right'
+    $mlPopOutLabel.Name = 'mlPopOutLabel'
+    $mlCommandBox.Controls.Add($mlPopOutLabel)
+    $toolTippl = New-Object System.Windows.Forms.ToolTip
+    $toolTippl.SetToolTip($popOutLabel, "Enlarge")
+    $toolTipmlpl = New-Object System.Windows.Forms.ToolTip
+    $toolTipmlpl.SetToolTip($mlPopOutLabel, "Reduce")
     # Erzeuge ein FlowLayoutPanel
     $flowLayoutPanel = New-Object System.Windows.Forms.FlowLayoutPanel
     $flowLayoutPanel.Dock = "Fill"
     $flowLayoutPanel.FlowDirection = "LeftToRight"
     $flowLayoutPanel.Size = New-Object System.Drawing.Size(0, 25)
-
     # Create a new Label control
     $commandLabel = New-Object System.Windows.Forms.Label
     $commandLabel.Text = "Custom command:"
@@ -234,31 +269,28 @@ function New-CommandArea {
     $radioButtonPWSH = New-Object System.Windows.Forms.RadioButton
     $radioButtonPWSH.Checked = $true
     $radioButtonPWSH.Text = "pwsh"
+    $radioButtonPWSH.Size = New-Object System.Drawing.Size(50, 25)
     $radioButtonCMD = New-Object System.Windows.Forms.RadioButton
     $radioButtonCMD.Checked = $false
     $radioButtonCMD.Text = "cmd"
+    $radioButtonCMD.Size = New-Object System.Drawing.Size(50, 25)
     # Erstellen einer Schaltfläche
     $invokeButton = New-Object System.Windows.Forms.Button
     $invokeButton.Text = "Invoke"
     $invokeButton.Anchor = "Right, top"
     #AddingControles
-
     $flowLayoutPanel.Controls.Add($commandLabel)
     $flowLayoutPanel.Controls.Add($radioButtonPWSH)
     $flowLayoutPanel.Controls.Add($radioButtonCMD)
     $TableLayoutPanel.Controls.Add($flowLayoutPanel, 0, 0)
     $TableLayoutPanel.SetColumnSpan($flowLayoutPanel, 2);
-    #$TableLayoutPanel.Controls.Add($commandLabel, 0, 0)
-    #$TableLayoutPanel.Controls.Add($radioButtonPWSH, 1, 0)
-    #$TableLayoutPanel.Controls.Add($radioButtonCMD, 1, 0)
-
     $TableLayoutPanel.Controls.Add($commandBox, 0, 1)
-    $TableLayoutPanel.SetColumnSpan($commandBox, 2);
+    $TableLayoutPanel.Controls.Add($mlcommandBox, 0, 1)
+    $TableLayoutPanel.SetColumnSpan($commandBox, 2)
+    $TableLayoutPanel.SetRowSpan($commandBox, 1)
     $TableLayoutPanel.Controls.Add($invokeButton, 2, 1)
 
-
-    $l1RightPanel.Controls.Add($TableLayoutPanel)
-
+    $l1MiddlePanel.Controls.Add($TableLayoutPanel)
 
     return @{
         commandBox      = $commandBox
@@ -266,9 +298,10 @@ function New-CommandArea {
         radioButtonPWSH = $radioButtonPWSH
         commandLabel    = $commandLabel
         invokeButton    = $invokeButton
-
+        popOutLabel     = $popOutLabel
+        mlpopOutLabel   = $mlpopOutLabel
+        mlcommandBox    = $mlcommandBox
     }
-
 }
 
 function New-TableAction {
@@ -279,7 +312,8 @@ function New-TableAction {
     #Create the bottom panel
     $l2LeftPanel = New-Object System.Windows.Forms.Panel
     $l2LeftPanel.Dock = 'top'
-    #$l2LeftPanel.BackColor = 'Gray'
+    $l2LeftPanel.Name = 'TableAction'
+    #$l2LeftPanel.BackColor = 'Lightgray'
     $l2LeftPanel.Size = New-Object System.Drawing.Size(0, 50)
     $mainPanel.Controls.Add($l2LeftPanel, 0, 2)
     $mainPanel.SetColumnSpan($l2LeftPanel, 2);
@@ -296,6 +330,10 @@ function New-TableAction {
     $filterTextBox = New-Object System.Windows.Forms.TextBox
     $filterTextBox.Dock = 'Fill'
     $filterTextBox.Size = New-Object System.Drawing.Size(200)
+   
+
+    
+   
     # Button a TextBox control for filtering
     $uninstallButton = New-Object System.Windows.Forms.Button
     $uninstallButton.Text = "Uninstall"
@@ -303,8 +341,10 @@ function New-TableAction {
 
 
     $TableLayoutPanel.Controls.Add($filterLabel, 0, 0)
-
     $TableLayoutPanel.Controls.Add($filterTextBox, 0, 1)
+
+
+
     $TableLayoutPanel.Controls.Add($uninstallButton, 3, 1)
 
     $TableLayoutPanel.SetColumnSpan($filterTextBox, 2);
@@ -314,6 +354,7 @@ function New-TableAction {
         filterTextBox   = $filterTextBox
         filterLabel     = $filterLabel
         uninstallButton = $uninstallButton
+       
     }
 }
 
@@ -326,8 +367,9 @@ function New-Table {
     # Create the bottom panel
     $l3LeftPanel = New-Object System.Windows.Forms.Panel
     $l3LeftPanel.Dock = 'Fill'
-    $l3LeftPanel.Size = New-Object System.Drawing.Size(700, 200)
-    #$l3LeftPanel.BackColor = 'Red'
+    $l3LeftPanel.Name = 'Table'
+    $l3LeftPanel.MinimumSize = New-Object System.Drawing.Size(700, 230)
+    #$l3LeftPanel.BackColor = 'Lightgray'
 
     $mainPanel.Controls.Add($l3LeftPanel, 0, 3)
     $mainPanel.SetColumnSpan($l3LeftPanel, 2);
@@ -343,6 +385,13 @@ function New-Table {
     #$table.ScrollBars = "Vertical"
     $table.SelectionMode = "FullRowSelect"
     $table.AutoSizeColumnsMode = "Fill"
+   
+    #$table.Dock = "Fill"
+    #$table.AutoSizeColumnsMode = "Fill"
+    #$table.AutoSizeRowsMode = "AllCells"
+    #$table.RowsDefaultCellStyle.WrapMode = "True"
+
+    
 
     $table.Anchor = "Top, Left, Bottom, Right"
     #$table.AutoSize = $true
@@ -358,6 +407,7 @@ function New-Table {
     }
 
 }
+
 function Add-TableContent {
     param (
         $table
@@ -419,7 +469,6 @@ function Add-TableContent {
     return $table
 }
 
-
 function Update-TableContent {
     # Parameter help description
     param(
@@ -449,36 +498,44 @@ function Update-TableContent {
 
 }
 
-function New-ExitButton {
+function New-Footer {
     param(
         $mainPanel
     )
 
 
     # Create the bottom panel
-    $l4RightPanel = New-Object System.Windows.Forms.Panel
-    $l4RightPanel.Dock = 'Bottom'
-    #$l4RightPanel.BackColor = 'green'
-    $l4RightPanel.Size = New-Object System.Drawing.Size(0, 25)
-    $mainPanel.Controls.Add($l4RightPanel, 1, 4)
-    #$mainPanel.SetColumnSpan($l4RightPanel, 2)
+    $l4MiddlePanel = New-Object System.Windows.Forms.Panel
+    $l4MiddlePanel.Dock = 'Bottom'
+    $l4MiddlePanel.Name = 'Footer'
+    #$l4MiddlePanel.BackColor = 'green'
+    $l4MiddlePanel.Size = New-Object System.Drawing.Size(0, 25)
+    $mainPanel.Controls.Add($l4MiddlePanel, 0, 4)
     # Create the table layout panel
     $TableLayoutPanel = New-Object System.Windows.Forms.TableLayoutPanel
     $TableLayoutPanel.Dock = 'Fill'
+
+    
+    $saveButton = New-Object System.Windows.Forms.Button
+    $saveButton.Text = "Save"
+    $saveButton.Anchor = "left, bottom"
+
     # Add Buttons
     $exitButton = New-Object System.Windows.Forms.Button
     $exitButton.Text = "Exit"
     $exitButton.Anchor = "right, bottom"
 
-    $TableLayoutPanel.Controls.Add($exitButton, 0, 0)
-    $l4RightPanel.Controls.Add($TableLayoutPanel)
+    $TableLayoutPanel.Controls.Add($exitButton, 1, 0)
+    $TableLayoutPanel.Controls.Add($saveButton, 0, 0)
+    $TableLayoutPanel.SetColumnSpan($l4MiddlePanel, 2)
+    $l4MiddlePanel.Controls.Add($TableLayoutPanel)
 
     return   @{
         exitButton = $exitButton
+        saveButton = $saveButton
     }
 
 }
-
 
 function New-ProgressBar {
     param (
@@ -486,6 +543,7 @@ function New-ProgressBar {
     )
     $progressBar = New-Object System.Windows.Forms.ProgressBar
     $progressBar.Dock = "Bottom"
+    $progressBar.Name = "ProgressBar"
     $progressBar.MarqueeAnimationSpeed = 20
 
     return   @{

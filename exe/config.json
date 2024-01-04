@@ -1,0 +1,9 @@
+{
+    "__Timeout": "The following setting controls the timout period for all invoke commands in seconds.",
+    "Timeout": 120,
+    "__DebugMode": "The following setting controls the debugmode, for testing/debugging you can define a default host.",
+    "DebugMode": true,
+    "TargetComputer": "HAMV21738",
+    "__Delimiter": "The following setting contros the csv delimiter",
+    "CSVDelimiter": ","
+}

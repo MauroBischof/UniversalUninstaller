@@ -21,4 +21,6 @@ The script is meant to support it admins or similar occupations in thier daylie 
 <li>PSRemoting must be enabled on the target computer.</li>
 </ul> 
 
+<H2> Demo  </H2>
 
+https://github.com/MauroBischof/UniversalUninstaller/assets/19153853/15688680-e058-4189-b5e2-a678dc5a5167

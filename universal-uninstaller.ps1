@@ -38,7 +38,8 @@ $ModuleDir = $ScriptDir + "\modules\"
 $global:PSSession = $null
 
 # Read the JSON content from the file
-$configFile = "config.json"
+$global:configFile = $PSScriptRoot + "\config.json"
+
 #region ******************** TESTING ********************
 
 #endregion TESTING

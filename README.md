@@ -5,7 +5,7 @@ The script is meant to support it admins or similar occupations in thier daylie 
 
 <H2> Installation </H2>
 <ul>
-<li><a href="https://github.com/MauroBischof/UniversalUninstaller/archive/refs/tags/Latest.zip"> Download</a> the Zip-File </li>
+<li><a href="https://github.com/MauroBischof/UniversalUninstaller/zipball/master/"> Download</a> the Zip-File </li>
 <li>Right click the downloaded Zip-File and select Properties.</li>
 <li>In the Gerneral-Tab, select "Unblock" and confirm.</li>
 <li>Extract the Zip-File and run the .ps1 file as administrator.</li>
